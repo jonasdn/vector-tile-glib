@@ -91,6 +91,63 @@ vector_tile_mapbox_new (guint8 *data, gssize size, gint tile_size)
   return mapbox;
 }
 
+
+static void
+mapbox_feature_set_style (VectorTile__Tile__Feature *feature,
+                          VectorTile__Tile__Layer *layer,
+                          cairo_t *cr)
+{
+  VectorTileMapboxColor color;
+  gint i;
+  gdouble scale = 256.0 / 4096.0;
+
+  cairo_set_line_width (cr, 1.0 / scale);
+  cairo_set_dash (cr, NULL, 0, 0);
+  if (!g_strcmp0 (layer->name, "water")) {
+    color.r = 0.752;
+    color.g = 0.847;
+    color.b = 1.0;
+  } else if (!g_strcmp0 (layer->name, "buildings")) {
+    color.r = 0.804;
+    color.g = 0.753;
+    color.b = 0.690;
+  } else if (!g_strcmp0 (layer->name, "roads")) {
+    for (i = 0; i < feature->n_tags; i += 2) {
+      char *key;
+
+      key = layer->keys[feature->tags[i]];
+      if (!g_strcmp0 (layer->keys[feature->tags[i]], "kind")) {
+	char *value = layer->values[feature->tags[i + 1]]->string_value;
+
+	if (!g_strcmp0 (value, "path")) {
+	  const double dashed[] = { 4.0 / scale };
+	  cairo_set_dash (cr, dashed, 1, 0);
+	  cairo_set_line_width (cr, 1.0 / scale);
+	} else {
+	  cairo_set_line_width (cr, 3.0 / scale);
+	}
+      }
+    }
+    color.r = 0.282;
+    color.g = 0.239;
+    color.b = 0.545;
+  } else if (!g_strcmp0 (layer->name, "landuse")) {
+    color.r = 0.596;
+    color.g = 0.984;
+    color.b = 0.596;
+  } else if (!g_strcmp0 (layer->name, "earth")) {
+    color.r = 0.961;
+    color.g = 0.992;
+    color.b = 0.941;
+  } else {
+    color.r = 1.0;
+    color.r = 0.0;
+    color.r = 0.0;
+  }
+
+  cairo_set_source_rgb (cr, color.r, color.g, color.b);
+}
+
 /*
   The geometry of a feature contains a stream of commands and parameters
   (vertices). The repeat count is shifted to the left by 3 bits. This means
@@ -121,48 +178,16 @@ vector_tile_mapbox_new (guint8 *data, gssize size, gint tile_size)
 */
 static void
 mapbox_render_feature (VectorTile__Tile__Feature *feature,
-                       VectorTile__Tile__Layer *layer, cairo_t *cr)
+                       VectorTile__Tile__Layer *layer,
+                       cairo_t *cr)
 {
   gint p_geom = 0;
   gint n;
-  VectorTileMapboxColor fill_color;
 
-  /*
-   * Tags of the feature are encoded as repeated pairs of
-   * integers. Even indexed values (n, beginning with 0) are
-   * themselves indexes into the layer's keys list. Odd indexed
-   * values (n+1) are indexes into the layer's values list.
-   * The first (n=0) tag of a feature, therefore, has a key of
-   * layer.keys[feature.tags[0]] and a value of
-   * layer.values[feature.tags[1]].
-   */
-  for (n = 0; n < feature->n_tags; n += 2) {
-    const char *key = layer->keys[feature->tags[n]];
+  mapbox_feature_set_style (feature, layer, cr);
 
-    if (!strncmp (key, "land", 4)) {
-        fill_color.r = 0.961;
-        fill_color.g = 0.992;
-        fill_color.b = 0.941;
-        break;
-    } else {
-        fill_color.r = 0.752;
-        fill_color.g = 0.847;
-        fill_color.b = 1.0;
-    }
-  }
-
-  switch (feature->type) {
-  case VECTOR_TILE__TILE__GEOM_TYPE__POINT:
-  case VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING:
-  case VECTOR_TILE__TILE__GEOM_TYPE__UNKNOWN:
-    cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
-    cairo_set_line_width (cr, 1.0);
-    break;
-
-  case VECTOR_TILE__TILE__GEOM_TYPE__POLYGON:
-    cairo_set_source_rgb (cr, fill_color.r, fill_color.g, fill_color.b);
-    break;
-  }
+  /* We need this since we are using relative move_to and line_to */
+  cairo_move_to (cr, 0, 0);
 
   do {
     gint cmd;
@@ -198,10 +223,10 @@ mapbox_render_feature (VectorTile__Tile__Feature *feature,
   } while(p_geom < feature->n_geometry);
 
   if (feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
-    cairo_stroke_preserve (cr);
+    cairo_stroke_preserve  (cr);
     cairo_fill (cr);
   } else {
-    cairo_stroke_preserve (cr);
+    cairo_stroke (cr);
   }
 }
 
@@ -212,17 +237,11 @@ mapbox_render_tile (VectorTileMapbox *mapbox, VectorTile__Tile *tile,
   VectorTileMapboxPrivate *priv = GET_PRIVATE (mapbox);
   gint l;
 
-  cairo_set_source_rgb (cr, 0.961, 0.992, 0.941);
-  cairo_rectangle (cr, 0.0, 0.0, priv->tile_size, priv->tile_size);
-  cairo_fill (cr);
-
-  /* We need this since we are using relative move_to and line_to */
-  cairo_move_to (cr, 0, 0);
-
   for (l = 0; l < tile->n_layers; l++) {
     VectorTile__Tile__Layer *layer = tile->layers[l];
     gint f;
 
+    cairo_save (cr);
     /* layer->extent: The bounding box for the tile spans from 0..4095 units */
     gdouble scale = (gdouble) priv->tile_size / layer->extent;
     cairo_scale (cr, scale, scale);
@@ -232,6 +251,8 @@ mapbox_render_tile (VectorTileMapbox *mapbox, VectorTile__Tile *tile,
 
       mapbox_render_feature (feature, layer, cr);
     }
+
+    cairo_restore (cr);
   }
 
   return TRUE;
