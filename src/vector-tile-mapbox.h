@@ -18,35 +18,39 @@
 #ifndef __VECTOR_TILE_MAPBOX_H__
 #define __VECTOR_TILE_MAPBOX_H__
 
+#include "vector-tile-mapcss.h"
+
 G_BEGIN_DECLS
 
-GType vector_tile_mapbox_get_type (void) G_GNUC_CONST;
+GType vtile_mapbox_get_type (void) G_GNUC_CONST;
 
-#define VECTOR_TILE_TYPE_MAPBOX                  (vector_tile_mapbox_get_type ())
-#define VECTOR_TILE_MAPBOX(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), VECTOR_TILE_TYPE_MAPBOX, VectorTileMapbox))
-#define VECTOR_TILE_IS_MAPBOX(obj)               (G_TYPE_CHECK_INSTANCE_TYPE ((obj), VECTOR_TILE_TYPE_MAPBOX))
-#define VECTOR_TILE_MAPBOX_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), VECTOR_TILE_TYPE_MAPBOX, VectorTileMapboxClass))
-#define VECTOR_TILE_IS_MAPBOX_CLASS(klass)       (G_TYPE_CHECK_CLASS_TYPE ((klass), VECTOR_TILE_TYPE_MAPBOX))
-#define VECTOR_TILE_MAPBOX_GET_CLASS(obj)        (G_TYPE_INSTANCE_GET_CLASS ((obj), VECTOR_TILE_TYPE_MAPBOX, VectorTileMapboxClass))
+#define VTILE_TYPE_MAPBOX                  (vtile_mapbox_get_type ())
+#define VTILE_MAPBOX(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), VTILE_TYPE_MAPBOX, VTileMapbox))
+#define VTILE_IS_MAPBOX(obj)               (G_TYPE_CHECK_INSTANCE_TYPE ((obj), VTILE_TYPE_MAPBOX))
+#define VTILE_MAPBOX_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), VTILE_TYPE_MAPBOX, VTileMapboxClass))
+#define VTILE_IS_MAPBOX_CLASS(klass)       (G_TYPE_CHECK_CLASS_TYPE ((klass), VTILE_TYPE_MAPBOX))
+#define VTILE_MAPBOX_GET_CLASS(obj)        (G_TYPE_INSTANCE_GET_CLASS ((obj), VTILE_TYPE_MAPBOX, VTileMapboxClass))
 
-typedef struct _VectorTileMapbox        VectorTileMapbox;
-typedef struct _VectorTileMapboxClass   VectorTileMapboxClass;
-typedef struct _VectorTileMapboxPrivate VectorTileMapboxPrivate;
+typedef struct _VTileMapbox        VTileMapbox;
+typedef struct _VTileMapboxClass   VTileMapboxClass;
+typedef struct _VTileMapboxPrivate VTileMapboxPrivate;
 
-struct _VectorTileMapbox {
+struct _VTileMapbox {
   /* <private> */
   GObject parent_instance;
-  VectorTileMapboxPrivate *priv;
+  VTileMapboxPrivate *priv;
 };
 
-struct _VectorTileMapboxClass {
+struct _VTileMapboxClass {
   /* <private> */
   GObjectClass parent_class;
 };
 
-VectorTileMapbox *vector_tile_mapbox_new (guint8 *data, gssize length, gint tile_size);
-gboolean vector_tile_mapbox_render_to_cairo (VectorTileMapbox *mapbox,
-                                             cairo_t *cr, GError **error);
+VTileMapbox *vtile_mapbox_new (guint8 *data, gssize length, gint tile_size);
+void vtile_mapbox_set_stylesheet (VTileMapbox *mapbox,
+                                  VTileMapCSS *stylesheet);
+gboolean vtile_mapbox_render_to_cairo (VTileMapbox *mapbox,
+                                       cairo_t *cr, GError **error);
 
 G_END_DECLS
 

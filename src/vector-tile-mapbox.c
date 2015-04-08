@@ -18,13 +18,12 @@
 #include <gio/gio.h>
 #include <cairo.h>
 
+#include "vector-tile-mapcss.h"
+#include "vector-tile-mapcss-style.h"
 #include "vector-tile-mapbox.h"
 #include "vector_tile.pb-c.h"
 
 #define ZIGZAG_DECODE(val) (((val) >> 1) ^ (-((val) & 1)))
-
-#define GET_PRIVATE(obj) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((obj), VECTOR_TILE_TYPE_MAPBOX, VectorTileMapboxPrivate))
 
 enum {
   MAPBOX_CMD_MOVE_TO = 1,
@@ -32,120 +31,124 @@ enum {
   MAPBOX_CMD_CLOSE_PATH = 7
 };
 
-struct _VectorTileMapboxPrivate {
+struct _VTileMapboxPrivate {
   guint8 *data;
   gssize size;
   gint tile_size;
+
+  VTileMapCSS *stylesheet;
 };
 
-typedef struct {
-  gdouble r;
-  gdouble g;
-  gdouble b;
-  gdouble alpha;
-} VectorTileMapboxColor;
-
-G_DEFINE_TYPE (VectorTileMapbox, vector_tile_mapbox, G_TYPE_OBJECT)
+G_DEFINE_TYPE_WITH_PRIVATE (VTileMapbox, vtile_mapbox, G_TYPE_OBJECT)
 
 static void
-vector_tile_mapbox_finalize (GObject *vmapbox)
+vtile_mapbox_finalize (GObject *vmapbox)
 {
-  VectorTileMapbox *mapbox = (VectorTileMapbox *) vmapbox;
-
-  G_OBJECT_CLASS (vector_tile_mapbox_parent_class)->finalize (vmapbox);
+  G_OBJECT_CLASS (vtile_mapbox_parent_class)->finalize (vmapbox);
 }
 
 static void
-vector_tile_mapbox_class_init (VectorTileMapboxClass *klass)
+vtile_mapbox_class_init (VTileMapboxClass *klass)
 {
   GObjectClass *mapbox_class = G_OBJECT_CLASS (klass);
 
-  mapbox_class->finalize = vector_tile_mapbox_finalize;
-
-  g_type_class_add_private (klass, sizeof (VectorTileMapboxPrivate));
+  mapbox_class->finalize = vtile_mapbox_finalize;
 }
 
 static void
-vector_tile_mapbox_init (VectorTileMapbox *mapbox)
+vtile_mapbox_init (VTileMapbox *mapbox)
 {
-  VectorTileMapboxPrivate *priv = GET_PRIVATE (mapbox);
-
-  mapbox->priv = priv;
-  priv->data = NULL;
-  priv->size = 0;
+  mapbox->priv = vtile_mapbox_get_instance_private (mapbox);
 }
 
-VectorTileMapbox *
-vector_tile_mapbox_new (guint8 *data, gssize size, gint tile_size)
+VTileMapbox *
+vtile_mapbox_new (guint8 *data, gssize size, gint tile_size)
 {
-  VectorTileMapbox *mapbox;
-  VectorTileMapboxPrivate *priv;
+  VTileMapbox *mapbox;
 
-  mapbox = g_object_new (VECTOR_TILE_TYPE_MAPBOX, NULL);
-  priv = GET_PRIVATE (mapbox);
+  mapbox = g_object_new (VTILE_TYPE_MAPBOX, NULL);
 
-  priv->data = data;
-  priv->size = size;
-  priv->tile_size = tile_size;
+  mapbox->priv->data = data;
+  mapbox->priv->size = size;
+  mapbox->priv->tile_size = tile_size;
 
   return mapbox;
 }
 
+void
+vtile_mapbox_set_stylesheet (VTileMapbox *mapbox, VTileMapCSS *stylesheet)
+{
+  mapbox->priv->stylesheet = stylesheet;
+}
 
-static void
-mapbox_feature_set_style (VectorTile__Tile__Feature *feature,
+static GHashTable *
+mapbox_get_tags (VectorTile__Tile__Feature *feature,
+                 VectorTile__Tile__Layer *layer)
+{
+  gint n;
+  gint added_kind = 0;
+  GHashTable *tags;
+
+  tags = g_hash_table_new (g_str_hash, g_str_equal);
+
+  for (n = 0; n < feature->n_tags; n += 2) {
+    char *key = layer->keys[feature->tags[n]];
+    VectorTile__Tile__Value *value = layer->values[feature->tags[n + 1]];
+
+    if (value->string_value) {
+      if (!g_strcmp0 (key, "kind")) {
+        g_print ("added: %s %s\n", layer->name, value->string_value);
+        g_hash_table_insert (tags, layer->name, value->string_value);
+      }
+      else {
+        g_hash_table_insert (tags, key, value->string_value);
+        g_print ("added: %s %s\n", key, value->string_value);
+      }
+    }
+  }
+
+  if (!added_kind) {
+    if (!g_hash_table_lookup (tags, layer->name)) {
+      g_hash_table_insert (tags, layer->name, "dummy");
+      g_print ("added: %s %s\n", layer->name, "dummy");
+    }
+  }
+
+  g_print ("\n\n");
+  return tags;
+}
+
+static VTileMapCSSStyle *
+mapbox_feature_get_style (VTileMapbox *mapbox,
+                          VectorTile__Tile__Feature *feature,
                           VectorTile__Tile__Layer *layer,
                           cairo_t *cr)
 {
-  VectorTileMapboxColor color;
-  gint i;
-  gdouble scale = 256.0 / 4096.0;
+  VTileMapCSSStyle *style;
+  GHashTable *tags;
+  char *selector;
 
-  cairo_set_line_width (cr, 1.0 / scale);
-  cairo_set_dash (cr, NULL, 0, 0);
-  if (!g_strcmp0 (layer->name, "water")) {
-    color.r = 0.752;
-    color.g = 0.847;
-    color.b = 1.0;
-  } else if (!g_strcmp0 (layer->name, "buildings")) {
-    color.r = 0.804;
-    color.g = 0.753;
-    color.b = 0.690;
-  } else if (!g_strcmp0 (layer->name, "roads")) {
-    for (i = 0; i < feature->n_tags; i += 2) {
-      char *key;
+  tags = mapbox_get_tags (feature, layer);
 
-      key = layer->keys[feature->tags[i]];
-      if (!g_strcmp0 (layer->keys[feature->tags[i]], "kind")) {
-	char *value = layer->values[feature->tags[i + 1]]->string_value;
-
-	if (!g_strcmp0 (value, "path")) {
-	  const double dashed[] = { 4.0 / scale };
-	  cairo_set_dash (cr, dashed, 1, 0);
-	  cairo_set_line_width (cr, 1.0 / scale);
-	} else {
-	  cairo_set_line_width (cr, 3.0 / scale);
-	}
-      }
+  switch (feature->type)
+    {
+    case VECTOR_TILE__TILE__GEOM_TYPE__POLYGON:
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "area", tags);
+      break;
+    case VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING:
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "way", tags);
+      break;
+    case VECTOR_TILE__TILE__GEOM_TYPE__POINT:
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node", tags);
+      break;
+    default:
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node", tags);
+      break;
     }
-    color.r = 0.282;
-    color.g = 0.239;
-    color.b = 0.545;
-  } else if (!g_strcmp0 (layer->name, "landuse")) {
-    color.r = 0.596;
-    color.g = 0.984;
-    color.b = 0.596;
-  } else if (!g_strcmp0 (layer->name, "earth")) {
-    color.r = 0.961;
-    color.g = 0.992;
-    color.b = 0.941;
-  } else {
-    color.r = 1.0;
-    color.r = 0.0;
-    color.r = 0.0;
-  }
 
-  cairo_set_source_rgb (cr, color.r, color.g, color.b);
+  g_hash_table_destroy (tags);
+
+  return style;
 }
 
 /*
@@ -176,18 +179,24 @@ mapbox_feature_set_style (VectorTile__Tile__Feature *feature,
 
   The original position is (0,0).
 */
-static void
-mapbox_render_feature (VectorTile__Tile__Feature *feature,
-                       VectorTile__Tile__Layer *layer,
-                       cairo_t *cr)
-{
-  gint p_geom = 0;
-  gint n;
 
-  mapbox_feature_set_style (feature, layer, cr);
+static void
+mapbox_render_geometry (VTileMapbox *mapbox,
+                        VectorTile__Tile__Feature *feature,
+                        VectorTile__Tile__Layer *layer,
+                        cairo_t *cr)
+{
+  gint n;
+  gdouble scale;
+  gint p_geom = 0;
 
   /* We need this since we are using relative move_to and line_to */
   cairo_move_to (cr, 0, 0);
+
+  cairo_save (cr);
+  /* layer->extent: The bounding box for the tile spans from 0..4095 units */
+  scale = (gdouble) mapbox->priv->tile_size / layer->extent;
+  cairo_scale (cr, scale, scale);
 
   do {
     gint cmd;
@@ -222,59 +231,153 @@ mapbox_render_feature (VectorTile__Tile__Feature *feature,
     p_geom += 1;
   } while(p_geom < feature->n_geometry);
 
+  cairo_restore (cr);
+}
+
+
+static void
+mapbox_render_feature (VTileMapbox *mapbox,
+                       VectorTile__Tile__Feature *feature,
+                       VectorTile__Tile__Layer *layer,
+                       cairo_t *cr)
+{
+  gdouble scale;
+  VTileMapCSSStyle *style;
+  VTileMapCSSValue *value;
+  gdouble line_width;
+
+  style = mapbox_feature_get_style (mapbox, feature, layer, cr);
+
+  /* Get line width */
+  value = vtile_mapcss_style_get (style, "width");
+  line_width = value->num;
+
+  value = vtile_mapcss_style_get (style, "casing-width");
+  if (value->num > 0 &&
+      feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING && value->num > 0) {
+
+    /* Set casing color */
+    value = vtile_mapcss_style_get (style, "casing-color");
+    cairo_set_source_rgb (cr,
+                          value->color.r,
+                          value->color.g,
+                          value->color.b);
+
+    g_print ("casing-color: %f, %f, %f\n",
+             value->color.r,
+             value->color.g,
+             value->color.b);
+
+    /* Set casing width */
+    value = vtile_mapcss_style_get (style, "casing-width");
+    cairo_set_line_width (cr, line_width + (2 * value->num));
+
+    /* Set linecap */
+    value = vtile_mapcss_style_get (style, "linecap");
+    cairo_set_line_cap (cr, value->line_cap);
+
+    /* Set dashes */
+    value = vtile_mapcss_style_get (style, "dashes");
+    cairo_set_dash (cr, value->dash.dashes, value->dash.num_dashes, 0);
+
+    mapbox_render_geometry (mapbox, feature, layer, cr);
+    cairo_stroke (cr);
+  }
+
+  /* Set line color */
+  value = vtile_mapcss_style_get (style, "color");
+  cairo_set_source_rgb (cr,
+                        value->color.r,
+                        value->color.g,
+                        value->color.b);
+
+  /* Set line width */
+  value = vtile_mapcss_style_get (style, "width");
+  cairo_set_line_width (cr, value->num);
+
+  /* Set linecap */
+  value = vtile_mapcss_style_get (style, "linecap");
+  cairo_set_line_cap (cr, value->line_cap);
+
+  /* Set dashes */
+  value = vtile_mapcss_style_get (style, "dashes");
+  cairo_set_dash (cr, value->dash.dashes, value->dash.num_dashes, 0);
+
+  mapbox_render_geometry (mapbox, feature, layer, cr);
+
   if (feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
     cairo_stroke_preserve  (cr);
+
+    /* Set the fill color */
+    value = vtile_mapcss_style_get (style, "fill-color");
+    cairo_set_source_rgb (cr,
+                          value->color.r,
+                          value->color.g,
+                          value->color.b);
     cairo_fill (cr);
   } else {
     cairo_stroke (cr);
   }
+
+  vtile_mapcss_style_free (style);
 }
 
 static gboolean
-mapbox_render_tile (VectorTileMapbox *mapbox, VectorTile__Tile *tile,
+mapbox_render_tile (VTileMapbox *mapbox, VectorTile__Tile *tile,
                     cairo_t *cr)
 {
-  VectorTileMapboxPrivate *priv = GET_PRIVATE (mapbox);
+  VTileMapCSSStyle *style;
+  VTileMapCSSValue *value;
   gint l;
+  gdouble scale = (gdouble) mapbox->priv->tile_size / 4096;
+
+  style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "canvas", NULL);
+  value = vtile_mapcss_style_get (style, "fill-color");
+  cairo_set_source_rgb (cr,
+                        value->color.r,
+                        value->color.g,
+                        value->color.b);
+  vtile_mapcss_style_free (style);
+
+  cairo_rectangle (cr, 0, 0, mapbox->priv->tile_size, mapbox->priv->tile_size);
+  cairo_fill (cr);
 
   for (l = 0; l < tile->n_layers; l++) {
     VectorTile__Tile__Layer *layer = tile->layers[l];
     gint f;
 
-    cairo_save (cr);
-    /* layer->extent: The bounding box for the tile spans from 0..4095 units */
-    gdouble scale = (gdouble) priv->tile_size / layer->extent;
-    cairo_scale (cr, scale, scale);
-
     for (f = 0; f < layer->n_features; f++) {
       VectorTile__Tile__Feature *feature = layer->features[f];
 
-      mapbox_render_feature (feature, layer, cr);
+      mapbox_render_feature (mapbox, feature, layer, cr);
     }
-
-    cairo_restore (cr);
   }
 
   return TRUE;
 }
 
 gboolean
-vector_tile_mapbox_render_to_cairo (VectorTileMapbox *mapbox, cairo_t *cr,
-                                    GError **error)
+vtile_mapbox_render_to_cairo (VTileMapbox *mapbox, cairo_t *cr,
+                              GError **error)
 {
-  VectorTileMapboxPrivate *priv = GET_PRIVATE (mapbox);
   VectorTile__Tile *tile;
   gint n;
+  gboolean status;
+
+  g_print ("mapbox: %p %d %p\n", mapbox, mapbox->priv->size, mapbox->priv->data);
 
   g_return_val_if_fail (mapbox != NULL, FALSE);
   g_return_val_if_fail (cr != NULL, FALSE);
 
   tile = vector_tile__tile__unpack (NULL,
-                                    priv->size,
-                                    priv->data);
+                                    mapbox->priv->size,
+                                    mapbox->priv->data);
   if (!tile) {
     return FALSE;
   }
 
-  return mapbox_render_tile (mapbox, tile, cr);
+  status = mapbox_render_tile (mapbox, tile, cr);
+  vector_tile__tile__free_unpacked (tile, NULL);
+
+  return status;
 }

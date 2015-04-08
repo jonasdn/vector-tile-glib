@@ -3,6 +3,8 @@
 #include <cairo.h>
 
 #include "vector-tile-mapbox.h"
+#include "vector-tile-mapcss.h"
+#include "vector-tile-mapcss-style.h"
 
 static char *output;
 static char **input = NULL;
@@ -31,7 +33,8 @@ main (int argc, char **argv)
   guint8 *tile_buffer;
   cairo_surface_t *surface;
   cairo_t *cr;
-  VectorTileMapbox *mapbox;
+  VTileMapbox *mapbox;
+  VTileMapCSS *stylesheet;
   GError *error = NULL;
   GOptionContext *context;
 
@@ -48,6 +51,8 @@ main (int argc, char **argv)
     exit (1);
   }
 
+  g_option_context_free (context);
+
   if (!output)
     output = "image.png";
 
@@ -61,6 +66,7 @@ main (int argc, char **argv)
                             NULL,
                             NULL);
   if (!info) {
+    g_object_unref (file);
     g_print ("Failed to query info\n");
     exit (1);
   }
@@ -76,20 +82,42 @@ main (int argc, char **argv)
                                     NULL,
                                     NULL);
   if (!status) {
+    g_free (tile_buffer);
+    g_object_unref (file);
     g_print ("Failed to read file\n");
     exit (1);
   }
+
+  g_object_unref (file);
+  g_object_unref (info);
+  g_object_unref (stream);
 
   surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
                                         tile_size, tile_size);
   cr = cairo_create (surface);
 
-  mapbox = vector_tile_mapbox_new (tile_buffer, size, tile_size);
-  vector_tile_mapbox_render_to_cairo (mapbox, cr, NULL);
+  stylesheet = vtile_mapcss_new ();
+  if (!vtile_mapcss_load (stylesheet, "sample.mss", &error)) {
+    g_printerr ("%s\n", error->message);
+    g_error_free (error);
 
-  cairo_surface_write_to_png (surface, output);
+    return 0;
+  }
+
+  mapbox = vtile_mapbox_new (tile_buffer, size, tile_size);
+  vtile_mapbox_set_stylesheet (mapbox, stylesheet);
+
+  if (!vtile_mapbox_render_to_cairo (mapbox, cr, NULL)) {
+    g_print ("Failed to render!\n");
+  } else {
+    cairo_surface_write_to_png (surface, output);
+  }
   cairo_destroy (cr);
   cairo_surface_destroy (surface);
+
+  g_free (tile_buffer);
+  g_object_unref (stylesheet);
+  g_object_unref (mapbox);
 
   return 0;
 }

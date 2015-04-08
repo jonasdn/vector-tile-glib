@@ -13,6 +13,16 @@ if test x"$PROTOCC_CHECK" != x"yes"; then
    AC_MSG_ERROR([Please install the Protocol Buffers C compiler.])
 fi
 
+AC_CHECK_PROG(LEMON_CHECK, lemon, yes)
+if test x"$LEMON_CHECK" != x"yes"; then
+   AC_MSG_ERROR([Please install the Lemon parser generator.])
+fi
+
+AC_CHECK_PROG(FLEX_CHECK, flex, yes)
+if test x"$FLEX_CHECK" != x"yes"; then
+   AC_MSG_ERROR([Please install the Flex scanner generator.])
+fi
+
 LT_INIT([disable-static])
 
 AC_CONFIG_FILES([Makefile src/Makefile demos/Makefile])
