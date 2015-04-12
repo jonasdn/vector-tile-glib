@@ -1,0 +1,21 @@
+canvas {
+    fill-color: #FAEBD7;
+}
+
+way {
+    casing-width: 0.95;
+    width: 1;
+    color: #ff0000;
+    casing-color: #0000ff;
+    linecap: round;
+    dashes: 2, 4;
+}
+
+area {
+    color: #00ff00;
+    fill-color: #ff0000;
+}
+
+node {
+    fill: 2;
+}

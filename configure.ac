@@ -25,6 +25,6 @@ fi
 
 LT_INIT([disable-static])
 
-AC_CONFIG_FILES([Makefile src/Makefile demos/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile demos/Makefile test/Makefile])
 
 AC_OUTPUT

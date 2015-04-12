@@ -1,0 +1,8 @@
+way {
+    color: #0000ff;
+    /*
+     * Missing semicolon
+     */
+    width: 4
+    linecap: NONE;
+}
