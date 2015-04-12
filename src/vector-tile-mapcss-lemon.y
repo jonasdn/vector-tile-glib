@@ -131,9 +131,13 @@ declaration_list(A) ::= declaration(B) . {
   A.list = g_list_append (A.list, B.declaration);
 }
 
+declaration_list ::= .
+
 declaration(A) ::= property(B) COLON value(C) SEMICOLON . {
   A.declaration = vtile_mapcss_declaration_new (B.str, C.value);
 }
+
+declaration ::= .
 
 property(A) ::= IDENT(B) . {
   A.str = B.str;
