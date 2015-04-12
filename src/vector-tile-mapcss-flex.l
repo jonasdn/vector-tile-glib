@@ -61,7 +61,7 @@ hexcolor       #([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
 
 {num} {
   yylval.value = vtile_mapcss_value_new ();
-  yylval.value->num = atof(yytext);
+  yylval.value->num = g_ascii_strtod (yytext, NULL);
   yylval.value->type = VTILE_MAPCSS_VALUE_TYPE_NUMBER;
 
   return NUM;
