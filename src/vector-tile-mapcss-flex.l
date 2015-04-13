@@ -21,6 +21,8 @@
     } while (0);
 %}
 
+%x COMMENT
+
 %option noyywrap
 %option reentrant
 %option yylineno
@@ -29,6 +31,25 @@ ident          [_a-z-]*
 num            [0-9]+|[0-9]*"."[0-9]+
 hexcolor       #([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
 %%
+
+"/*" {
+  BEGIN(COMMENT);
+}
+
+<COMMENT>[^*\n]* {
+  /* eat anything that's not a '*' */
+ }
+<COMMENT>"*"+[^*/\n]* {
+  /* eat up '*'s not followed by '/'s */
+ }
+
+<COMMENT>\n {
+  lineno++;
+ }
+
+<COMMENT>"*"+"/" {
+  BEGIN(INITIAL);
+}
 
 "node" {
   yylval.str = g_strdup (yytext);
