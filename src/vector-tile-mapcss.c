@@ -29,6 +29,13 @@ enum {
   VTILE_MAPCSS_ERROR_PARSE
 };
 
+enum {
+  PROP_0,
+
+  PROP_LINENO,
+  PROP_COLUMN
+};
+
 G_DEFINE_TYPE_WITH_PRIVATE (VTileMapCSS, vtile_mapcss, G_TYPE_OBJECT)
 
 void *ParseAlloc(void *(*mallocProc)(size_t));
@@ -53,11 +60,67 @@ vtile_mapcss_finalize (GObject *vmapcss)
 }
 
 static void
+vtile_mapcss_get_property (GObject *object,
+                           guint property_id,
+                           GValue *value,
+                           GParamSpec *pspec)
+{
+  VTileMapCSS *mapcss = VTILE_MAPCSS (object);
+
+  switch (property_id) {
+  case PROP_LINENO:
+    g_value_set_uint (value, mapcss->priv->lineno);
+    break;
+
+  case PROP_COLUMN:
+    g_value_set_uint (value, mapcss->priv->column);
+    break;
+
+  default:
+    /* We don't have any other property... */
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
+  }
+}
+
+static void
 vtile_mapcss_class_init (VTileMapCSSClass *klass)
 {
   GObjectClass *mapcss_class = G_OBJECT_CLASS (klass);
+  GParamSpec *pspec;
 
   mapcss_class->finalize = vtile_mapcss_finalize;
+  mapcss_class->get_property = vtile_mapcss_get_property;
+
+  /**
+   * VTileMapCSS:lineno:
+   *
+   * The line currently being parsed
+   */
+  pspec = g_param_spec_uint ("lineno",
+                             "Line number",
+                             "The line currently being parsed",
+                             0,
+                             G_MAXUINT,
+                             0,
+                             G_PARAM_READABLE |
+                             G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (mapcss_class, PROP_LINENO, pspec);
+
+  /**
+   * VTileMapCSS:column:
+   *
+   * The line column being parsed
+   */
+  pspec = g_param_spec_uint ("column",
+                             "Column",
+                             "The column currently being parsed",
+                             0,
+                             G_MAXUINT,
+                             0,
+                             G_PARAM_READABLE |
+                             G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (mapcss_class, PROP_COLUMN, pspec);
 }
 
 static void
@@ -106,6 +169,8 @@ vtile_mapcss_parse (VTileMapCSS *mapcss, guint8 *data, gssize size,
   buffer_state = yy_scan_buffer (data, size, scanner);
   lemon_mapcss = ParseAlloc (malloc);
 
+  yyset_lineno (1, scanner);
+  yyset_column (0, scanner);
   do {
     gdouble val;
 
@@ -200,7 +265,7 @@ void vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
 {
   char *msg;
 
-  msg = g_strdup_printf ("Unexpected token '%s' at %d:%d, expected: %s\n",
+  msg = g_strdup_printf ("Unexpected token '%s' at %u:%u, expected: %s\n",
                          mapcss->priv->text, mapcss->priv->lineno,
                          mapcss->priv->column, valid_tokens);
   mapcss->priv->parse_error = msg;
@@ -213,7 +278,7 @@ void vtile_mapcss_set_type_error (VTileMapCSS *mapcss)
   char *msg;
   gint i;
 
-  msg = g_strdup_printf ("Unexpected type at %d:%d\n",
+  msg = g_strdup_printf ("Unexpected type at %u:%u\n",
                          mapcss->priv->lineno, mapcss->priv->column);
   mapcss->priv->parse_error = msg;
 }
