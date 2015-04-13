@@ -4,14 +4,21 @@
   #include "vector-tile-mapcss-lemon.h"
   #include "vector-tile-mapcss-private.h"
 
-#define YY_USER_ACTION                                                  \
-  do {                                                                  \
-    yyset_column(column, yyscanner);                                    \
-    column = yyget_column (yyscanner) + yyget_leng (yyscanner);         \
-  } while (0);
+  gint lineno;
+  gint column;
 
-  guint lineno = 1;
-  guint column = 1;
+  #define YY_USER_ACTION                                                \
+    do {                                                                \
+      yyset_column (column, yyscanner);                                 \
+      column = yyget_column (yyscanner) + yyget_leng (yyscanner);       \
+    } while (0);
+
+
+  #define YY_USER_INIT                                                  \
+    do {                                                                \
+      lineno = 1;                                                       \
+      column = 0;                                                       \
+    } while (0);
 %}
 
 %option noyywrap
@@ -125,7 +132,7 @@ hexcolor       #([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
 
 [\n\r] {
   yyset_lineno (++lineno, yyscanner);
-  column = 1;
+  column = 0;
 }
 
 [ \t] {
