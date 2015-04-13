@@ -46,8 +46,20 @@ vtile_mapcss_style_add_line_cap (VTileMapCSSStyle *style,
 {
   VTileMapCSSValue *value = vtile_mapcss_value_new ();
 
-  value->type = VTILE_MAPCSS_VALUE_TYPE_LINECAP,
+  value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_CAP,
   value->line_cap = line_cap;
+  g_hash_table_insert (style->properties, g_strdup (name), value);
+}
+
+static void
+vtile_mapcss_style_add_line_join (VTileMapCSSStyle *style,
+                                  const char *name,
+                                  VTileMapCSSLineJoin line_join)
+{
+  VTileMapCSSValue *value = vtile_mapcss_value_new ();
+
+  value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN,
+  value->line_cap = line_join;
   g_hash_table_insert (style->properties, g_strdup (name), value);
 }
 
@@ -95,6 +107,10 @@ vtile_mapcss_style_new ()
                                    });
   vtile_mapcss_style_add_line_cap (style, "linecap",
                                    VTILE_MAPCSS_LINE_CAP_NONE);
+
+  vtile_mapcss_style_add_line_join (style, "linejoin",
+                                    VTILE_MAPCSS_LINE_JOIN_ROUND);
+
   return style;
 }
 

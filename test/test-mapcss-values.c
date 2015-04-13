@@ -62,7 +62,7 @@ test_values (void)
 
   value = vtile_mapcss_style_get (style, "linecap");
   g_assert (value != NULL);
-  g_assert (value->type == VTILE_MAPCSS_VALUE_TYPE_LINECAP);
+  g_assert (value->type == VTILE_MAPCSS_VALUE_TYPE_LINE_CAP);
   g_assert_cmpint (value->line_cap, ==, VTILE_MAPCSS_LINE_CAP_ROUND);
 
   value = vtile_mapcss_style_get (style, "dashes");

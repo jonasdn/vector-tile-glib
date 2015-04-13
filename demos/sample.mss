@@ -12,6 +12,8 @@ way[highway] {
     color: #ffffff;
     linecap: round;
     casing-linecap: round;
+    linejoin: bevel;
+    casing-linejoin: bevel;
     casing-width: 1;
     width: 5;
     casing-color: #C7B8A4;

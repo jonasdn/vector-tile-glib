@@ -159,22 +159,44 @@ value(A) ::= line_cap(B) . {
   A.value = B.value;
 }
 
+value(A) ::= line_join(B) . {
+  A.value = B.value;
+}
+
 line_cap(A) ::= NONE . {
   A.value = vtile_mapcss_value_new ();
   A.value->line_cap = VTILE_MAPCSS_LINE_CAP_NONE;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINECAP;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_CAP;
 }
 
 line_cap(A) ::= SQUARE . {
   A.value = vtile_mapcss_value_new ();
   A.value->line_cap = VTILE_MAPCSS_LINE_CAP_SQUARE;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINECAP;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_CAP;
 }
 
 line_cap(A) ::= ROUND . {
   A.value = vtile_mapcss_value_new ();
   A.value->line_cap = VTILE_MAPCSS_LINE_CAP_ROUND;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINECAP;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_CAP;
+}
+
+line_join(A) ::= MITER . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->line_join = VTILE_MAPCSS_LINE_JOIN_MITER;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN;
+}
+
+line_join(A) ::= BEVEL . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->line_join = VTILE_MAPCSS_LINE_JOIN_BEVEL;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN;
+}
+
+line_join(A) ::= ROUND . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->line_join = VTILE_MAPCSS_LINE_JOIN_ROUND;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN;
 }
 
 dash(A) ::= num_list(B) . {

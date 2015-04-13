@@ -13,7 +13,8 @@ typedef enum {
   VTILE_MAPCSS_VALUE_TYPE_NUMBER,
   VTILE_MAPCSS_VALUE_TYPE_STRING,
   VTILE_MAPCSS_VALUE_TYPE_DASH,
-  VTILE_MAPCSS_VALUE_TYPE_LINECAP
+  VTILE_MAPCSS_VALUE_TYPE_LINE_CAP,
+  VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN,
 } VTileMapCSSValueType;
 
 typedef enum {
@@ -21,6 +22,12 @@ typedef enum {
   VTILE_MAPCSS_LINE_CAP_ROUND,
   VTILE_MAPCSS_LINE_CAP_SQUARE
 } VTileMapCSSLineCap;
+
+typedef enum {
+  VTILE_MAPCSS_LINE_JOIN_MITER,
+  VTILE_MAPCSS_LINE_JOIN_ROUND,
+  VTILE_MAPCSS_LINE_JOIN_BEVEL
+} VTileMapCSSLineJoin;
 
 typedef struct {
   gdouble r;
@@ -39,6 +46,7 @@ typedef struct {
     VTileMapCSSColor color;
     VTileMapCSSDash dash;
     VTileMapCSSLineCap line_cap;
+    VTileMapCSSLineJoin line_join;
     gdouble num;
     char *str;
   };

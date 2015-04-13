@@ -87,6 +87,14 @@ hexcolor       #([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
   return SQUARE;
 }
 
+"bevel" {
+  return BEVEL;
+}
+
+"miter" {
+  return MITER;
+}
+
 {num} {
   yylval.value = vtile_mapcss_value_new ();
   yylval.value->num = g_ascii_strtod (yytext, NULL);

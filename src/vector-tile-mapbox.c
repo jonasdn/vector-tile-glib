@@ -263,11 +263,6 @@ mapbox_render_feature (VTileMapbox *mapbox,
                           value->color.g,
                           value->color.b);
 
-    g_print ("casing-color: %f, %f, %f\n",
-             value->color.r,
-             value->color.g,
-             value->color.b);
-
     /* Set casing width */
     value = vtile_mapcss_style_get (style, "casing-width");
     cairo_set_line_width (cr, line_width + (2 * value->num));
@@ -275,6 +270,10 @@ mapbox_render_feature (VTileMapbox *mapbox,
     /* Set linecap */
     value = vtile_mapcss_style_get (style, "linecap");
     cairo_set_line_cap (cr, value->line_cap);
+
+    /* Set linejoin */
+    value = vtile_mapcss_style_get (style, "linejoin");
+    cairo_set_line_cap (cr, value->line_join);
 
     /* Set dashes */
     value = vtile_mapcss_style_get (style, "dashes");
@@ -298,6 +297,10 @@ mapbox_render_feature (VTileMapbox *mapbox,
   /* Set linecap */
   value = vtile_mapcss_style_get (style, "linecap");
   cairo_set_line_cap (cr, value->line_cap);
+
+  /* Set linejoin */
+  value = vtile_mapcss_style_get (style, "linejoin");
+  cairo_set_line_cap (cr, value->line_join);
 
   /* Set dashes */
   value = vtile_mapcss_style_get (style, "dashes");
