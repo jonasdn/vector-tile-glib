@@ -105,6 +105,13 @@ test(A) ::= IDENT(B) EQUAL IDENT(C) . {
   A.test->operator = VTILE_MAPCSS_TEST_TAG_EQUALS;
 }
 
+test(A) ::= IDENT(B) NOT EQUAL IDENT(C) . {
+  A.test = vtile_mapcss_test_new ();
+  A.test->tag = B.str;
+  A.test->value = C.str;
+  A.test->operator = VTILE_MAPCSS_TEST_TAG_NOT_EQUALS;
+}
+
 selector_type(A) ::= NODE_SELECTOR(B) . {
   A.str = B.str;
 }

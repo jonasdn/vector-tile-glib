@@ -337,7 +337,10 @@ vtile_mapcss_match_selector (VTileMapCSSSelector *selector,
 
     for (l = tests; l != NULL; l = l->next) {
       VTileMapCSSTest *test = (VTileMapCSSTest *) l->data;
-      char *value = g_hash_table_lookup (style->tags, test->tag);
+      char *value = NULL;
+
+      if (style->tags)
+        value = g_hash_table_lookup (style->tags, test->tag);
 
       switch (test->operator) {
       case VTILE_MAPCSS_TEST_TAG_IS_SET:
@@ -354,6 +357,13 @@ vtile_mapcss_match_selector (VTileMapCSSSelector *selector,
         if (!value)
           apply = FALSE;
         else if (g_strcmp0 (value, test->value))
+          apply = FALSE;
+        break;
+
+      case VTILE_MAPCSS_TEST_TAG_NOT_EQUALS:
+        if (!value)
+          apply = FALSE;
+        else if (!g_strcmp0 (value, test->value))
           apply = FALSE;
         break;
       }
