@@ -133,16 +133,20 @@ mapbox_feature_get_style (VTileMapbox *mapbox,
   switch (feature->type)
     {
     case VECTOR_TILE__TILE__GEOM_TYPE__POLYGON:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "area", tags);
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "area",
+                                      tags, 1);
       break;
     case VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "way", tags);
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "way",
+                                      tags, 1);
       break;
     case VECTOR_TILE__TILE__GEOM_TYPE__POINT:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node", tags);
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node",
+                                      tags, 1);
       break;
     default:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node", tags);
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node",
+                                      tags, 1);
       break;
     }
 
@@ -334,7 +338,8 @@ mapbox_render_tile (VTileMapbox *mapbox, VectorTile__Tile *tile,
   gint l;
   gdouble scale = (gdouble) mapbox->priv->tile_size / 4096;
 
-  style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "canvas", NULL);
+  style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "canvas",
+                                  NULL, 1);
   value = vtile_mapcss_style_get (style, "fill-color");
   cairo_set_source_rgb (cr,
                         value->color.r,

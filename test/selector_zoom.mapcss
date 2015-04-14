@@ -1,0 +1,11 @@
+way|z10[highway] {
+    width: 2;
+}
+
+area|z5 {
+    width: 3;
+}
+
+way|z0-9 {
+    width: 4;
+}

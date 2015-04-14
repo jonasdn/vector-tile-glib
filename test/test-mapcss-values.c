@@ -33,7 +33,7 @@ test_values (void)
   stylesheet = mapcss_new_and_load (filename);
   g_assert (stylesheet != NULL);
 
-  style = vtile_mapcss_get_style (stylesheet, "way", NULL);
+  style = vtile_mapcss_get_style (stylesheet, "way", NULL, 1);
   g_assert (style != NULL);
 
   value = vtile_mapcss_style_get (style, "casing-width");

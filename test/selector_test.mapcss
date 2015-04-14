@@ -1,0 +1,21 @@
+way[highway] {
+    casing-width: 0.95;
+    width: 4;
+    color: #ff0000;
+    casing-color: #0000ff;
+    linecap: round;
+    dashes: 2, 4;
+}
+
+way[highway=footway] {
+    width: 5;
+ 
+}
+
+area[building!=museum] {
+    width: 7;
+}
+
+area[!building] {
+    width: 9;
+}

@@ -376,7 +376,8 @@ vtile_mapcss_match_selector (VTileMapCSSSelector *selector,
 VTileMapCSSStyle *
 vtile_mapcss_get_style (VTileMapCSS *mapcss,
                         const char *selector,
-                        GHashTable *tags)
+                        GHashTable *tags,
+                        guint zoom)
 {
   VTileMapCSSStyle *style;
   GQueue *queue;

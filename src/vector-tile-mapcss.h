@@ -54,7 +54,8 @@ gboolean vector_tile_mapcss_load (VTileMapCSS *mapcss,
                                   GError **error);
 VTileMapCSSStyle *vtile_mapcss_get_style (VTileMapCSS *mapcss,
                                           const char *slector,
-                                          GHashTable *tags);
+                                          GHashTable *tags,
+                                          guint zoom);
 
 G_END_DECLS
 

@@ -1,0 +1,16 @@
+canvas {
+    width: 2;
+}
+
+way {
+    width: 3;
+}
+
+area {
+    width: 4;
+}
+
+node {
+    width: 5;
+}
+
