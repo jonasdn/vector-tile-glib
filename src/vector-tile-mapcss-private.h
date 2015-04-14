@@ -41,7 +41,7 @@ typedef struct {
 #ifndef YYSTYPE
 typedef struct {
   char *str;
-  gdouble num;
+  guint *range;
   GList *list;
   VTileMapCSSSelector *selector;
   VTileMapCSSDeclaration *declaration;

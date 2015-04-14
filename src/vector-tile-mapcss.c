@@ -323,67 +323,88 @@ vtile_mapcss_apply_selector (VTileMapCSSSelector *selector,
   }
 }
 
+static gboolean
+vtile_mapcss_match_tests (VTileMapCSSSelector *selector,
+                          VTileMapCSSStyle *style)
+{
+  GList *l = NULL;
+  gboolean match = TRUE;
+  GList *tests = vtile_mapcss_selector_get_tests (selector);
+
+  if (!tests)
+    return TRUE;
+
+  for (l = tests; l != NULL; l = l->next) {
+    VTileMapCSSTest *test = (VTileMapCSSTest *) l->data;
+    char *value = NULL;
+
+    if (style->tags)
+      value = g_hash_table_lookup (style->tags, test->tag);
+
+    switch (test->operator) {
+    case VTILE_MAPCSS_TEST_TAG_IS_SET:
+      if (!value)
+        match = FALSE;
+      break;
+
+    case VTILE_MAPCSS_TEST_TAG_IS_NOT_SET:
+      if (value)
+        match = FALSE;
+      break;
+
+    case VTILE_MAPCSS_TEST_TAG_EQUALS:
+      if (!value)
+        match = FALSE;
+      else if (g_strcmp0 (value, test->value))
+        match = FALSE;
+      break;
+
+    case VTILE_MAPCSS_TEST_TAG_NOT_EQUALS:
+      if (!value)
+        match = FALSE;
+      else if (!g_strcmp0 (value, test->value))
+        match = FALSE;
+      break;
+    }
+  }
+
+  return match;
+}
+
+static gboolean
+vtile_mapcss_match_zoom (VTileMapCSSSelector *selector,
+                         VTileMapCSSStyle *style)
+{
+  guint *ranges;
+
+  ranges = vtile_mapcss_selector_get_zoom_levels (selector);
+  if (!ranges)
+    return TRUE;
+
+  return style->zoom_level >= ranges[0] && style->zoom_level <= ranges[1];
+}
+
 static void
 vtile_mapcss_match_selector (VTileMapCSSSelector *selector,
                              VTileMapCSSStyle *style)
 {
-  GList *tests = vtile_mapcss_selector_get_tests (selector);
-
-  if (!tests) {
+  if (vtile_mapcss_match_zoom (selector, style) &&
+      vtile_mapcss_match_tests (selector, style))
     vtile_mapcss_apply_selector (selector, style);
-  } else {
-    GList *l = NULL;
-    gboolean apply = TRUE;
-
-    for (l = tests; l != NULL; l = l->next) {
-      VTileMapCSSTest *test = (VTileMapCSSTest *) l->data;
-      char *value = NULL;
-
-      if (style->tags)
-        value = g_hash_table_lookup (style->tags, test->tag);
-
-      switch (test->operator) {
-      case VTILE_MAPCSS_TEST_TAG_IS_SET:
-        if (!value)
-          apply = FALSE;
-        break;
-
-      case VTILE_MAPCSS_TEST_TAG_IS_NOT_SET:
-        if (value)
-          apply = FALSE;
-        break;
-
-      case VTILE_MAPCSS_TEST_TAG_EQUALS:
-        if (!value)
-          apply = FALSE;
-        else if (g_strcmp0 (value, test->value))
-          apply = FALSE;
-        break;
-
-      case VTILE_MAPCSS_TEST_TAG_NOT_EQUALS:
-        if (!value)
-          apply = FALSE;
-        else if (!g_strcmp0 (value, test->value))
-          apply = FALSE;
-        break;
-      }
-    }
-    if (apply)
-      vtile_mapcss_apply_selector (selector, style);
-  }
 }
 
 VTileMapCSSStyle *
 vtile_mapcss_get_style (VTileMapCSS *mapcss,
                         const char *selector,
                         GHashTable *tags,
-                        guint zoom)
+                        guint zoom_level)
 {
   VTileMapCSSStyle *style;
   GQueue *queue;
 
   style = vtile_mapcss_style_new ();
   style->tags = tags;
+  style->zoom_level = zoom_level;
 
   queue = g_hash_table_lookup (mapcss->priv->selectors, selector);
   if (queue)

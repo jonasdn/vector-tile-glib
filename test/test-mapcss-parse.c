@@ -10,7 +10,7 @@ mapcss_new_and_load (const char *filename)
 {
   gboolean status;
   GError *error = NULL;
-  
+
   stylesheet = vtile_mapcss_new ();
 
   status = vtile_mapcss_load (stylesheet, filename, &error);
@@ -152,7 +152,7 @@ test_selector_zoom (void)
 
   g_assert (mapcss_new_and_load (filename));
 
-  for (i = 1; i < 20; i++) {
+  for (i = 0; i < 20; i++) {
     VTileMapCSSStyle *style;
 
     style = vtile_mapcss_get_style (stylesheet, "way", tags, i);
@@ -194,7 +194,7 @@ assert_error_where (const char *filename,
                     guint ex_lineno, guint ex_column)
 {
   guint lineno, column;
-  
+
   g_assert (mapcss_new_and_load (filename) != TRUE);
   g_object_get (stylesheet,
                 "lineno", &lineno,

@@ -48,7 +48,8 @@ struct _VTileMapCSSSelectorClass {
   GObjectClass parent_class;
 };
 
-VTileMapCSSSelector *vtile_mapcss_selector_new (char *name, GList *tests);
+VTileMapCSSSelector *vtile_mapcss_selector_new (char *name, GList *tests,
+                                                gint *zoom_levels);
 void vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
 					     GList *declarations);
 void vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
@@ -56,6 +57,7 @@ void vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
 GList *vtile_mapcss_selector_get_declarations (VTileMapCSSSelector *selector);
 GList * vtile_mapcss_selector_get_tests (VTileMapCSSSelector *selector);
 char * vtile_mapcss_selector_get_name (VTileMapCSSSelector *selector);
+guint * vtile_mapcss_selector_get_zoom_levels (VTileMapCSSSelector *selector);
 
 G_END_DECLS
 

@@ -30,6 +30,7 @@
 ident          [_a-z-]*
 num            [0-9]+|[0-9]*"."[0-9]+
 hexcolor       #([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
+zoomlevel      "z"([0-9]|[0-9]{2})
 %%
 
 "/*" {
@@ -117,12 +118,6 @@ hexcolor       #([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
   return HEXCOLOR;
 }
 
-{ident} {
-  yylval.str = g_strdup (yytext);
-
-  return IDENT;
- }
-
 "{" {
   return LBRACE;
 }
@@ -158,6 +153,27 @@ hexcolor       #([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
 "," {
   return COMMA;
 }
+
+"-" {
+  return DASH;
+}
+
+"|" {
+  return PIPE;
+}
+
+{zoomlevel} {
+  yylval.value = vtile_mapcss_value_new ();
+  yylval.value->num = atoi (yytext + 1);
+
+  return ZL;
+}
+
+{ident} {
+  yylval.str = g_strdup (yytext);
+
+  return IDENT;
+ }
 
 [\n\r] {
   yyset_lineno (++lineno, yyscanner);

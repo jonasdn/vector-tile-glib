@@ -24,6 +24,7 @@ struct _VTileMapCSSSelectorPrivate {
   char *name;
   GList *tests;
   GList *declarations;
+  gint *zoom_levels;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (VTileMapCSSSelector, vtile_mapcss_selector, G_TYPE_OBJECT)
@@ -39,6 +40,9 @@ vtile_mapcss_selector_finalize (GObject *vselector)
 
   if (selector->priv->declarations)
     g_list_free_full (selector->priv->declarations, g_object_unref);
+
+  if (selector->priv->zoom_levels)
+    g_free (selector->priv->zoom_levels);
 
   g_free (selector->priv->name);
 
@@ -58,11 +62,12 @@ vtile_mapcss_selector_init (VTileMapCSSSelector *selector)
 {
   selector->priv = vtile_mapcss_selector_get_instance_private (selector);
   selector->priv->declarations = NULL;
+  selector->priv->zoom_levels = NULL;
 }
 
 
 VTileMapCSSSelector *
-vtile_mapcss_selector_new (char *name, GList *tests)
+vtile_mapcss_selector_new (char *name, GList *tests, gint *zoom_levels)
 {
   VTileMapCSSSelector *selector;
   VTileMapCSSSelectorPrivate *priv;
@@ -71,6 +76,7 @@ vtile_mapcss_selector_new (char *name, GList *tests)
 
   selector->priv->tests = tests;
   selector->priv->name = name;
+  selector->priv->zoom_levels = zoom_levels;
 
   return selector;
 }
@@ -98,4 +104,10 @@ char *
 vtile_mapcss_selector_get_name (VTileMapCSSSelector *selector)
 {
   return selector->priv->name;
+}
+
+guint *
+vtile_mapcss_selector_get_zoom_levels (VTileMapCSSSelector *selector)
+{
+  return selector->priv->zoom_levels;
 }

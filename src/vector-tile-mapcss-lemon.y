@@ -64,12 +64,30 @@ selector_list(A) ::= selector(B) . {
   A.list = g_list_append (A.list, B.selector);
 }
 
-selector(A) ::= selector_type(B) . {
-  A.selector = vtile_mapcss_selector_new (B.str, NULL);
+selector(A) ::= selector_type(B) zoom_levels(C) tag_tests(D) . {
+  A.selector = vtile_mapcss_selector_new (B.str, D.list, C.range);
 }
 
-selector(A) ::= selector_type(B) tag_tests(C) . {
-  A.selector = vtile_mapcss_selector_new (B.str, C.list);
+zoom_levels(A) ::= PIPE ZL(B) . {
+  A.range = g_malloc (sizeof (guint) * 2);
+  A.range[0] = B.value->num;
+  A.range[1] = B.value->num;
+
+  vtile_mapcss_value_free (B.value);
+}
+
+zoom_levels(A) ::= PIPE ZL(B) DASH NUM(C) . {
+  A.range = g_malloc (sizeof (guint) * 2);
+
+  A.range[0] = B.value->num;
+  A.range[1] = C.value->num;
+
+  vtile_mapcss_value_free (B.value);
+  vtile_mapcss_value_free (C.value);
+}
+
+zoom_levels(A) ::= . {
+  A.range = NULL;
 }
 
 tag_tests(A) ::= tag_tests(B) tag_test(C) . {
@@ -80,6 +98,10 @@ tag_tests(A) ::= tag_tests(B) tag_test(C) . {
 tag_tests(A) ::= tag_test(B) . {
   A.list = NULL;
   A.list = g_list_append (A.list, B.test);
+}
+
+tag_tests(A) ::= . {
+  A.list = NULL;
 }
 
 tag_test(A) ::= LBRACKET test(B) RBRACKET . {
