@@ -54,10 +54,14 @@ void vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
 					     GList *declarations);
 void vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
 					     GList *declarations);
-GList *vtile_mapcss_selector_get_declarations (VTileMapCSSSelector *selector);
-GList * vtile_mapcss_selector_get_tests (VTileMapCSSSelector *selector);
-char * vtile_mapcss_selector_get_name (VTileMapCSSSelector *selector);
-guint * vtile_mapcss_selector_get_zoom_levels (VTileMapCSSSelector *selector);
+GHashTable *vtile_mapcss_selector_get_declarations (VTileMapCSSSelector *selector);
+GList *vtile_mapcss_selector_get_tests (VTileMapCSSSelector *selector);
+char *vtile_mapcss_selector_get_name (VTileMapCSSSelector *selector);
+guint *vtile_mapcss_selector_get_zoom_levels (VTileMapCSSSelector *selector);
+gboolean vtile_mapcss_selector_equals (VTileMapCSSSelector *a,
+                                       VTileMapCSSSelector *b);
+void vtile_mapcss_selector_merge (VTileMapCSSSelector *a,
+                                  VTileMapCSSSelector *b);
 
 G_END_DECLS
 

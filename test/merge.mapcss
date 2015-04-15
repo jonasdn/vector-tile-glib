@@ -1,0 +1,25 @@
+way {
+    width: 3;
+}
+
+area {
+    fill-color: #ff00ff;
+    width: 4;
+}
+
+way[highway=trunk], way[highway=trunk_link], way[highway=primary] {
+    color: #ff9966;
+    casing-color: #bb5500;
+    width: 7;
+}
+
+way[highway=primary] {
+    casing-width: 0.8;
+    width: 6;
+}
+
+area {
+    casing-width: 1;
+    width: 5;
+}
+

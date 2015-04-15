@@ -82,6 +82,8 @@ void vtile_mapcss_declaration_free (VTileMapCSSDeclaration *declaration);
 VTileMapCSSValue *vtile_mapcss_value_new ();
 VTileMapCSSValue *vtile_mapcss_value_copy (VTileMapCSSValue *value);
 void vtile_mapcss_value_free (VTileMapCSSValue *value);
+
+gint vtile_mapcss_get_num_styles (VTileMapCSS *mapcss);
 G_END_DECLS
 
 #endif /* VECTOR_TILE_MAPCSS_PRIVATE */

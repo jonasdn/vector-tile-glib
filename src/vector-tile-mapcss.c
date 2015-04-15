@@ -283,13 +283,15 @@ void vtile_mapcss_set_type_error (VTileMapCSS *mapcss)
   mapcss->priv->parse_error = msg;
 }
 
-gboolean
+void
 vtile_mapcss_add_selector (VTileMapCSS *mapcss,
                            VTileMapCSSSelector *selector)
 {
   GQueue *selector_queue = NULL;
+  gboolean push = TRUE;
   GList *l;
   char * name;
+  gint i;
 
   name = vtile_mapcss_selector_get_name (selector);
   selector_queue = g_hash_table_lookup (mapcss->priv->selectors, name);
@@ -298,34 +300,44 @@ vtile_mapcss_add_selector (VTileMapCSS *mapcss,
     g_hash_table_insert (mapcss->priv->selectors, name, selector_queue);
   }
 
-  g_queue_push_tail (selector_queue, selector);
+  for (i = 0; i < selector_queue->length; i++) {
+    VTileMapCSSSelector *current = g_queue_peek_nth (selector_queue, i);
 
-  return TRUE;
+    if (vtile_mapcss_selector_equals (current, selector)) {
+      vtile_mapcss_selector_merge (current, selector);
+      push = FALSE;
+      break;
+    }
+  }
+
+  if (push)
+    g_queue_push_tail (selector_queue, selector);
 }
 
 static void
 vtile_mapcss_apply_selector (VTileMapCSSSelector *selector,
                              VTileMapCSSStyle *style)
 {
-  GList *declarations;
-  GList *l = NULL;
+  GHashTable *declarations;
+  char **keys;
+  gint n, i;
 
   declarations = vtile_mapcss_selector_get_declarations (selector);
-  for (l = declarations; l != NULL; l = l->next) {
-    VTileMapCSSDeclaration *declaration = (VTileMapCSSDeclaration *) l->data;
+  keys = (char **) g_hash_table_get_keys_as_array (declarations, &n);
+
+  for (i = 0; i < n; i++) {
     char *property;
     VTileMapCSSValue *value;
 
-    property = g_strdup (vtile_mapcss_declaration_get_property (declaration));
-    value = vtile_mapcss_value_copy (vtile_mapcss_declaration_get_value (declaration));
-
+    property = g_strdup (keys[i]);
+    value = vtile_mapcss_value_copy (g_hash_table_lookup (declarations, keys[i]));
     g_hash_table_insert (style->properties, property, value);
   }
 }
 
 static gboolean
 vtile_mapcss_match_tests (VTileMapCSSSelector *selector,
-                          VTileMapCSSStyle *style)
+                          GHashTable *tags)
 {
   GList *l = NULL;
   gboolean match = TRUE;
@@ -338,8 +350,8 @@ vtile_mapcss_match_tests (VTileMapCSSSelector *selector,
     VTileMapCSSTest *test = (VTileMapCSSTest *) l->data;
     char *value = NULL;
 
-    if (style->tags)
-      value = g_hash_table_lookup (style->tags, test->tag);
+    if (tags)
+      value = g_hash_table_lookup (tags, test->tag);
 
     switch (test->operator) {
     case VTILE_MAPCSS_TEST_TAG_IS_SET:
@@ -373,7 +385,7 @@ vtile_mapcss_match_tests (VTileMapCSSSelector *selector,
 
 static gboolean
 vtile_mapcss_match_zoom (VTileMapCSSSelector *selector,
-                         VTileMapCSSStyle *style)
+                         guint zoom_level)
 {
   guint *ranges;
 
@@ -381,34 +393,47 @@ vtile_mapcss_match_zoom (VTileMapCSSSelector *selector,
   if (!ranges)
     return TRUE;
 
-  return style->zoom_level >= ranges[0] && style->zoom_level <= ranges[1];
-}
-
-static void
-vtile_mapcss_match_selector (VTileMapCSSSelector *selector,
-                             VTileMapCSSStyle *style)
-{
-  if (vtile_mapcss_match_zoom (selector, style) &&
-      vtile_mapcss_match_tests (selector, style))
-    vtile_mapcss_apply_selector (selector, style);
+  return zoom_level >= ranges[0] && zoom_level <= ranges[1];
 }
 
 VTileMapCSSStyle *
 vtile_mapcss_get_style (VTileMapCSS *mapcss,
-                        const char *selector,
+                        const char *selector_name,
                         GHashTable *tags,
                         guint zoom_level)
 {
   VTileMapCSSStyle *style;
   GQueue *queue;
+  gint i;
 
   style = vtile_mapcss_style_new ();
-  style->tags = tags;
-  style->zoom_level = zoom_level;
 
-  queue = g_hash_table_lookup (mapcss->priv->selectors, selector);
-  if (queue)
-    g_queue_foreach (queue, (GFunc) vtile_mapcss_match_selector, style);
+  queue = g_hash_table_lookup (mapcss->priv->selectors, selector_name);
+  if (queue) {
+    for (i = 0; i < queue->length; i++) {
+      VTileMapCSSSelector *selector = g_queue_peek_nth (queue, i);
+      if (vtile_mapcss_match_zoom (selector, zoom_level) &&
+          vtile_mapcss_match_tests (selector, tags))
+        vtile_mapcss_apply_selector (selector, style);
+    }
+  }
 
   return style;
+}
+
+gint
+vtile_mapcss_get_num_styles (VTileMapCSS *mapcss)
+{
+  gint n, i, count = 0;
+  char **keys;
+
+  keys = (char **) g_hash_table_get_keys_as_array (mapcss->priv->selectors, &n);
+
+  for (i = 0; i < n; i++) {
+    GQueue *queue = g_hash_table_lookup (mapcss->priv->selectors, keys[i]);
+
+    count += queue->length;
+  }
+
+  return count;
 }

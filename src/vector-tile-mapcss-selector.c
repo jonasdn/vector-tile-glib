@@ -23,7 +23,7 @@
 struct _VTileMapCSSSelectorPrivate {
   char *name;
   GList *tests;
-  GList *declarations;
+  GHashTable *declarations;
   gint *zoom_levels;
 };
 
@@ -38,8 +38,7 @@ vtile_mapcss_selector_finalize (GObject *vselector)
     g_list_free_full (selector->priv->tests,
                       (GDestroyNotify) vtile_mapcss_test_free);
 
-  if (selector->priv->declarations)
-    g_list_free_full (selector->priv->declarations, g_object_unref);
+  g_hash_table_destroy (selector->priv->declarations);
 
   if (selector->priv->zoom_levels)
     g_free (selector->priv->zoom_levels);
@@ -61,7 +60,7 @@ static void
 vtile_mapcss_selector_init (VTileMapCSSSelector *selector)
 {
   selector->priv = vtile_mapcss_selector_get_instance_private (selector);
-  selector->priv->declarations = NULL;
+  selector->priv->declarations = g_hash_table_new (g_str_hash, g_str_equal);
   selector->priv->zoom_levels = NULL;
 }
 
@@ -81,14 +80,96 @@ vtile_mapcss_selector_new (char *name, GList *tests, gint *zoom_levels)
   return selector;
 }
 
+
+gboolean
+test_in_list (VTileMapCSSTest *test, GList *tests)
+{
+  GList *l = NULL;
+
+  for (l = tests; l != NULL; l = l->next) {
+    VTileMapCSSTest *t = (VTileMapCSSTest *) l->data;
+
+    if (test->operator != t->operator)
+      continue;
+
+    if (g_strcmp0 (test->tag, t->tag))
+      continue;
+
+    if (g_strcmp0 (test->value, t->value))
+      continue;
+
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+gboolean
+vtile_mapcss_selector_equals (VTileMapCSSSelector *a,
+                              VTileMapCSSSelector *b)
+{
+  GList *l = NULL;
+
+  if (g_strcmp0 (a->priv->name, b->priv->name))
+    return FALSE;
+
+  if (a->priv->zoom_levels && b->priv->zoom_levels) {
+    if (a->priv->zoom_levels[0] != b->priv->zoom_levels[0] ||
+        a->priv->zoom_levels[1] != b->priv->zoom_levels[1])
+      return FALSE;
+  } else {
+    if (a->priv->zoom_levels || b->priv->zoom_levels)
+      return FALSE;
+  }
+
+  if (a->priv->tests && b->priv->tests) {
+    if (g_list_length (a->priv->tests) != g_list_length (b->priv->tests))
+      return FALSE;
+
+    for (l = a->priv->tests; l != NULL; l = l->next) {
+      VTileMapCSSTest *test = (VTileMapCSSTest *) l->data;
+
+      if (!test_in_list (test, b->priv->tests))
+        return FALSE;
+    }
+  } else {
+    if (a->priv->tests || b->priv->tests)
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+void
+vtile_mapcss_selector_merge (VTileMapCSSSelector *a,
+                             VTileMapCSSSelector *b)
+{
+  char **keys;
+  gint n, i;
+
+  keys = (char **) g_hash_table_get_keys_as_array (b->priv->declarations, &n);
+  for (i = 0; i < n; i++) {
+    g_hash_table_insert (a->priv->declarations, keys[i],
+                         g_hash_table_lookup (b->priv->declarations, keys[i]));
+  }
+}
+
 void
 vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
                                         GList *declarations)
 {
-  selector->priv->declarations = declarations;
+  GList *l = NULL;
+
+  for (l = declarations; l != NULL; l = l->next) {
+    VTileMapCSSDeclaration *declaration = (VTileMapCSSDeclaration *) l->data;
+
+    g_hash_table_insert (selector->priv->declarations,
+                         vtile_mapcss_declaration_get_property (declaration),
+                         vtile_mapcss_declaration_get_value (declaration));
+  }
 }
 
-GList *
+GHashTable *
 vtile_mapcss_selector_get_declarations (VTileMapCSSSelector *selector)
 {
   return selector->priv->declarations;

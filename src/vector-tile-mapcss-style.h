@@ -5,8 +5,6 @@
 
 typedef struct {
   GHashTable *properties;
-  GHashTable *tags;
-  guint zoom_level;
 } VTileMapCSSStyle;
 
 typedef enum {
