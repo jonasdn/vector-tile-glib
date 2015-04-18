@@ -3,10 +3,14 @@ AM_INIT_AUTOMAKE([1.9 foreign])
 
 AC_PROG_CC
 
+AC_CONFIG_MACRO_DIR([m4])
+
 PKG_CHECK_MODULES(VECTOR_TILE,
 	gio-2.0 >= 2.42.1
 	libprotobuf-c >= 1.0.1
 	cairo >= 1.4)
+
+GOBJECT_INTROSPECTION_CHECK([0.6.3])
 
 AC_CHECK_PROG(PROTOCC_CHECK, protoc-c, yes)
 if test x"$PROTOCC_CHECK" != x"yes"; then
