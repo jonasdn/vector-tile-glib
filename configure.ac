@@ -36,7 +36,7 @@ AC_CONFIG_FILES([
         vector-tile-glib-1.0.pc
         Makefile
         src/Makefile
-        demos/Makefile
+        tools/Makefile
         test/Makefile])
 
 AC_OUTPUT

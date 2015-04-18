@@ -1,4 +1,4 @@
-noinst_PROGRAMS = tile-to-png test-dump-info
+noinst_PROGRAMS = tile-to-png dump-info
 
 AM_CPPFLAGS = $(VECTOR_TILE_CFLAGS) -I$(top_srcdir)/src
 
