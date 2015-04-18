@@ -110,6 +110,18 @@ vtile_mapbox_set_stylesheet (VTileMapbox *mapbox, VTileMapCSS *stylesheet)
   mapbox->priv->stylesheet = stylesheet;
 }
 
+static void
+mapbox_print_tags (GHashTable *tags)
+{
+  char **keys;
+  gint n, i;
+
+  keys = g_hash_table_get_keys_as_array (tags, &n);
+  for (i = 0; i < n; i++) {
+    g_print ("%s = %s\n", keys[i], g_hash_table_lookup (tags, keys[i]));
+  }
+}
+
 static GHashTable *
 mapbox_get_tags (VectorTile__Tile__Feature *feature,
                  VectorTile__Tile__Layer *layer)
