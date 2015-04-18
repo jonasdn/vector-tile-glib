@@ -81,6 +81,7 @@ vtile_mapcss_style_new ()
                                              (GDestroyNotify) vtile_mapcss_value_free);
 
   vtile_mapcss_style_add_num (style, "width", 1.0);
+  vtile_mapcss_style_add_num (style, "z-index", 0.0);
   vtile_mapcss_style_add_num (style, "casing-width", 0.0);
   vtile_mapcss_style_add_color (style, "fill-color",
                                 (VTileMapCSSColor) {

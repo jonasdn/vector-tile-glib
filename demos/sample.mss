@@ -12,12 +12,13 @@ way[highway] {
     color: #ffffff;
     linecap: round;
     casing-linecap: round;
-    linejoin: bevel;
-    casing-linejoin: bevel;
+    linejoin: miter;
+    casing-linejoin: miter;
     casing-width: 1;
     width: 5;
     casing-color: #C7B8A4;
 }
+
 
 way[highway=motorway], way[highway=motorway_link],
 way[highway=trunk], way[highway=trunk_link] {
@@ -56,7 +57,7 @@ area[landuse=park] {
     fill-color: #73D216;
 }
 
-area[water] {
+area[water], way[water] {
     color: #4A90D9;
     fill-color: #4A90D9;
 }
@@ -66,7 +67,16 @@ area[buildings] {
     fill-color: #C7B8A4;
 }
 
+way[is_bridge=yes] {
+    color: #333333;
+    width: 2;
+}
 
+way[is_tunnel=yes] {
+    color: #333333;
+    width: 2;
+    dashes: 3, 3;
+}
 
 
 

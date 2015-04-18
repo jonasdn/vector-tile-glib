@@ -28,10 +28,8 @@ vtile_mapcss_value_copy (VTileMapCSSValue *src)
 void
 vtile_mapcss_value_free (VTileMapCSSValue *value)
 {
-  if (value->type == VTILE_MAPCSS_VALUE_TYPE_STRING) {
-    g_print ("free!\n");
+  if (value->type == VTILE_MAPCSS_VALUE_TYPE_STRING)
     g_free (value->str);
-  }
 
   g_free (value);
 }

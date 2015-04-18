@@ -31,12 +31,36 @@ enum {
   MAPBOX_CMD_CLOSE_PATH = 7
 };
 
+enum {
+  MAPBOX_RENDER_LAYER_EARTH,
+  MAPBOX_RENDER_LAYER_WATER,
+  MAPBOX_RENDER_LAYER_PLACES,
+  MAPBOX_RENDER_LAYER_LANDUSE,
+  MAPBOX_RENDER_LAYER_ROADS,
+  MAPBOX_RENDER_LAYER_BUILDINGS,
+  MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL,
+  MAPBOX_RENDER_LAYER_POI,
+  NUM_RENDER_LAYERS
+};
+
+typedef struct {
+  VectorTile__Tile__Feature *feature;
+  VTileMapCSSStyle *style;
+
+  guint layer_index;
+  guint z_index;
+  guint extent;
+  guint tile_size;
+} MapboxFeatureData;
+
+
 struct _VTileMapboxPrivate {
   guint8 *data;
   gssize size;
   guint tile_size;
   guint zoom_level;
 
+  GList *render_layers[NUM_RENDER_LAYERS];
   VTileMapCSS *stylesheet;
 };
 
@@ -118,15 +142,11 @@ mapbox_get_tags (VectorTile__Tile__Feature *feature,
 
 static VTileMapCSSStyle *
 mapbox_feature_get_style (VTileMapbox *mapbox,
+                          GHashTable *tags,
                           VectorTile__Tile__Feature *feature,
-                          VectorTile__Tile__Layer *layer,
-                          cairo_t *cr)
+                          VectorTile__Tile__Layer *layer)
 {
   VTileMapCSSStyle *style;
-  GHashTable *tags;
-  char *selector;
-
-  tags = mapbox_get_tags (feature, layer);
 
   switch (feature->type)
     {
@@ -147,8 +167,6 @@ mapbox_feature_get_style (VTileMapbox *mapbox,
                                       tags, mapbox->priv->zoom_level);
       break;
     }
-
-  g_hash_table_destroy (tags);
 
   return style;
 }
@@ -183,9 +201,7 @@ mapbox_feature_get_style (VTileMapbox *mapbox,
 */
 
 static void
-mapbox_render_geometry (VTileMapbox *mapbox,
-                        VectorTile__Tile__Feature *feature,
-                        VectorTile__Tile__Layer *layer,
+mapbox_render_geometry (MapboxFeatureData *data,
                         cairo_t *cr)
 {
   gint n;
@@ -197,15 +213,15 @@ mapbox_render_geometry (VTileMapbox *mapbox,
 
   cairo_save (cr);
   /* layer->extent: The bounding box for the tile spans from 0..4095 units */
-  scale = (gdouble) mapbox->priv->tile_size / layer->extent;
+  scale = (gdouble) data->tile_size / data->extent;
   cairo_scale (cr, scale, scale);
 
   do {
     gint cmd;
     gint length;
 
-    cmd = feature->geometry[p_geom] & 7L;
-    length = feature->geometry[p_geom] >> 3;
+    cmd = data->feature->geometry[p_geom] & 7L;
+    length = data->feature->geometry[p_geom] >> 3;
 
     if (cmd == MAPBOX_CMD_MOVE_TO || cmd == MAPBOX_CMD_LINE_TO) {
       gint32 from;
@@ -214,10 +230,10 @@ mapbox_render_geometry (VTileMapbox *mapbox,
       for (n = 0; n < length; n++) {
         guint32 parameter;
 
-        parameter = feature->geometry[++p_geom];
+        parameter = data->feature->geometry[++p_geom];
         from = ZIGZAG_DECODE (parameter);
 
-        parameter = feature->geometry[++p_geom];
+        parameter = data->feature->geometry[++p_geom];
         to = ZIGZAG_DECODE (parameter);
 
         if (cmd == MAPBOX_CMD_MOVE_TO)
@@ -231,90 +247,124 @@ mapbox_render_geometry (VTileMapbox *mapbox,
     }
 
     p_geom += 1;
-  } while(p_geom < feature->n_geometry);
+  } while(p_geom < data->feature->n_geometry);
 
   cairo_restore (cr);
 }
 
+static void
+mapbox_process_feature (VTileMapbox *mapbox,
+                        VectorTile__Tile__Feature *feature,
+                        VectorTile__Tile__Layer *layer,
+                        guint layer_index,
+                        guint layer_extent)
+{
+  MapboxFeatureData *data;
+  VTileMapCSSValue *value;
+  GHashTable *tags;
+  char *tag_value;
+  GList *render_layer;
+
+  tags = mapbox_get_tags (feature, layer);
+
+  data = g_new (MapboxFeatureData, 1);
+  data->style = mapbox_feature_get_style (mapbox, tags, feature, layer);
+  value = vtile_mapcss_style_get (data->style, "z-index");
+  data->z_index = value->num;
+  data->extent = layer_extent;
+  data->tile_size = mapbox->priv->tile_size;
+  data->feature = feature;
+
+  if (layer_index == MAPBOX_RENDER_LAYER_ROADS) {
+    tag_value = g_hash_table_lookup (tags, "is_tunnel");
+    if (tag_value) {
+      if (!g_strcmp0 (tag_value, "yes"))
+        layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
+    } else {
+      tag_value = g_hash_table_lookup (tags, "is_bridge");
+      if (tag_value) {
+        if (!g_strcmp0 (tag_value, "yes"))
+          layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
+      }
+    }
+  }
+  data->layer_index = layer_index;
+  mapbox->priv->render_layers[layer_index] =
+    g_list_prepend (mapbox->priv->render_layers[layer_index], data);
+  g_hash_table_destroy (tags);
+}
 
 static void
-mapbox_render_feature (VTileMapbox *mapbox,
-                       VectorTile__Tile__Feature *feature,
-                       VectorTile__Tile__Layer *layer,
+mapbox_render_feature (MapboxFeatureData *data,
                        cairo_t *cr)
 {
-  gdouble scale;
-  VTileMapCSSStyle *style;
   VTileMapCSSValue *value;
   gdouble line_width;
 
-  style = mapbox_feature_get_style (mapbox, feature, layer, cr);
-
   /* Get line width */
-  value = vtile_mapcss_style_get (style, "width");
+  value = vtile_mapcss_style_get (data->style, "width");
   line_width = value->num;
 
-  value = vtile_mapcss_style_get (style, "casing-width");
+  value = vtile_mapcss_style_get (data->style, "casing-width");
   if (value->num > 0 &&
-      feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING && value->num > 0) {
+      data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING && value->num > 0) {
 
     /* Set casing color */
-    value = vtile_mapcss_style_get (style, "casing-color");
+    value = vtile_mapcss_style_get (data->style, "casing-color");
     cairo_set_source_rgb (cr,
                           value->color.r,
                           value->color.g,
                           value->color.b);
 
     /* Set casing width */
-    value = vtile_mapcss_style_get (style, "casing-width");
+    value = vtile_mapcss_style_get (data->style, "casing-width");
     cairo_set_line_width (cr, line_width + (2 * value->num));
 
     /* Set linecap */
-    value = vtile_mapcss_style_get (style, "linecap");
+    value = vtile_mapcss_style_get (data->style, "linecap");
     cairo_set_line_cap (cr, value->line_cap);
-
-    /* Set linejoin */
-    value = vtile_mapcss_style_get (style, "linejoin");
+   /* Set linejoin */
+    value = vtile_mapcss_style_get (data->style, "linejoin");
     cairo_set_line_cap (cr, value->line_join);
 
     /* Set dashes */
-    value = vtile_mapcss_style_get (style, "dashes");
+    value = vtile_mapcss_style_get (data->style, "dashes");
     cairo_set_dash (cr, value->dash.dashes, value->dash.num_dashes, 0);
 
-    mapbox_render_geometry (mapbox, feature, layer, cr);
+
+    mapbox_render_geometry (data, cr);
     cairo_stroke (cr);
   }
 
   /* Set line color */
-  value = vtile_mapcss_style_get (style, "color");
+  value = vtile_mapcss_style_get (data->style, "color");
   cairo_set_source_rgb (cr,
                         value->color.r,
                         value->color.g,
                         value->color.b);
 
   /* Set line width */
-  value = vtile_mapcss_style_get (style, "width");
+  value = vtile_mapcss_style_get (data->style, "width");
   cairo_set_line_width (cr, value->num);
 
   /* Set linecap */
-  value = vtile_mapcss_style_get (style, "linecap");
+  value = vtile_mapcss_style_get (data->style, "linecap");
   cairo_set_line_cap (cr, value->line_cap);
 
   /* Set linejoin */
-  value = vtile_mapcss_style_get (style, "linejoin");
+  value = vtile_mapcss_style_get (data->style, "linejoin");
   cairo_set_line_cap (cr, value->line_join);
 
   /* Set dashes */
-  value = vtile_mapcss_style_get (style, "dashes");
-  cairo_set_dash (cr, value->dash.dashes, value->dash.num_dashes, 0);
+  value = vtile_mapcss_style_get (data->style, "dashes");
 
-  mapbox_render_geometry (mapbox, feature, layer, cr);
+    mapbox_render_geometry (data, cr);
 
-  if (feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
+  if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
     cairo_stroke_preserve  (cr);
 
     /* Set the fill color */
-    value = vtile_mapcss_style_get (style, "fill-color");
+    value = vtile_mapcss_style_get (data->style, "fill-color");
     cairo_set_source_rgb (cr,
                           value->color.r,
                           value->color.g,
@@ -324,20 +374,20 @@ mapbox_render_feature (VTileMapbox *mapbox,
     cairo_stroke (cr);
   }
 
-  vtile_mapcss_style_free (style);
+  vtile_mapcss_style_free (data->style);
+  g_free (data);
 }
 
-static gboolean
-mapbox_render_tile (VTileMapbox *mapbox, VectorTile__Tile *tile,
-                    cairo_t *cr)
+static void
+mapbox_set_canvas_style (VTileMapbox *mapbox,
+                         cairo_t *cr)
 {
   VTileMapCSSStyle *style;
   VTileMapCSSValue *value;
-  gint l;
-  gdouble scale = (gdouble) mapbox->priv->tile_size / 4096;
 
   style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "canvas",
-                                  NULL, 1);
+                                  NULL, mapbox->priv->zoom_level);
+
   value = vtile_mapcss_style_get (style, "fill-color");
   cairo_set_source_rgb (cr,
                         value->color.r,
@@ -345,17 +395,70 @@ mapbox_render_tile (VTileMapbox *mapbox, VectorTile__Tile *tile,
                         value->color.b);
   vtile_mapcss_style_free (style);
 
-  cairo_rectangle (cr, 0, 0, mapbox->priv->tile_size, mapbox->priv->tile_size);
+  cairo_rectangle (cr, 0, 0,
+                   mapbox->priv->tile_size,
+                   mapbox->priv->tile_size);
   cairo_fill (cr);
+}
+
+static guint
+mapbox_get_layer_index (const char *name)
+{
+  if (!g_strcmp0 (name, "water"))
+    return MAPBOX_RENDER_LAYER_WATER;
+  else if (!g_strcmp0 (name, "earth"))
+    return MAPBOX_RENDER_LAYER_EARTH;
+  else if (!g_strcmp0 (name, "places"))
+    return MAPBOX_RENDER_LAYER_PLACES;
+  else if (!g_strcmp0 (name, "landuse"))
+    return MAPBOX_RENDER_LAYER_LANDUSE;
+  else if (!g_strcmp0 (name, "roads"))
+    return MAPBOX_RENDER_LAYER_ROADS;
+  else if (!g_strcmp0 (name, "buildings"))
+    return MAPBOX_RENDER_LAYER_BUILDINGS;
+  else
+    return MAPBOX_RENDER_LAYER_POI;
+}
+
+static gint
+mapbox_compare_z_index (const MapboxFeatureData *a,
+                        const MapboxFeatureData *b)
+{
+  if (a < b)
+    return -1;
+  else if (a > b)
+    return 1;
+
+  return 0;
+}
+
+static gboolean
+mapbox_render_tile (VTileMapbox *mapbox,
+                    VectorTile__Tile *tile,
+                    cairo_t *cr)
+
+{
+  gint l, f;
 
   for (l = 0; l < tile->n_layers; l++) {
+    guint layer_index;
     VectorTile__Tile__Layer *layer = tile->layers[l];
-    gint f;
 
+    layer_index = mapbox_get_layer_index (layer->name);
     for (f = 0; f < layer->n_features; f++) {
       VectorTile__Tile__Feature *feature = layer->features[f];
 
-      mapbox_render_feature (mapbox, feature, layer, cr);
+      mapbox_process_feature (mapbox, feature, layer,
+                              layer_index, layer->extent);
+    }
+  }
+
+  for (l = 0; l < NUM_RENDER_LAYERS; l++) {
+    GList *layer = mapbox->priv->render_layers[l];
+
+    if (layer) {
+      layer = g_list_sort (layer, (GCompareFunc) mapbox_compare_z_index);
+      g_list_foreach (layer, (GFunc) mapbox_render_feature, cr);
     }
   }
 
