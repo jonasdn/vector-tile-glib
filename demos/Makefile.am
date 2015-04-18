@@ -1,4 +1,4 @@
-noinst_PROGRAMS = tile-to-png test-parse
+noinst_PROGRAMS = tile-to-png test-parse dump-info
 
 AM_CPPFLAGS = $(VECTOR_TILE_CFLAGS) -I$(top_srcdir)/src
 
@@ -7,6 +7,9 @@ tile_to_png_LDADD = $(VECTOR_TILE_LIBS) ../src/libvector-tile-glib.la
 
 test_parse_SOURCES = test-parse.c
 test_parse_LDADD = $(VECTOR_TILE_LIBS) ../src/libvector-tile-glib.la
+
+dump_info_SOURCES = dump-info.c
+dump_info_LDADD = $(VECTOR_TILE_LIBS) ../src/libvector-tile-glib.la
 
 .PHONY: debug
 debug: tile-to-png

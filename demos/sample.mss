@@ -52,12 +52,12 @@ area {
     width: 1;
 }
 
-area[landuse=park] {
+area[landuse=park], area[landuse=playground], area[landuse=pitch] {
     color: #73D216;
     fill-color: #73D216;
 }
 
-area[water], way[water] {
+area[water], way[water], area[natural=water] {
     color: #4A90D9;
     fill-color: #4A90D9;
 }

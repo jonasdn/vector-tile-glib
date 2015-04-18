@@ -33,9 +33,9 @@ enum {
 
 enum {
   MAPBOX_RENDER_LAYER_EARTH,
+  MAPBOX_RENDER_LAYER_LANDUSE,
   MAPBOX_RENDER_LAYER_WATER,
   MAPBOX_RENDER_LAYER_PLACES,
-  MAPBOX_RENDER_LAYER_LANDUSE,
   MAPBOX_RENDER_LAYER_ROADS,
   MAPBOX_RENDER_LAYER_BUILDINGS,
   MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL,
@@ -116,7 +116,7 @@ mapbox_print_tags (GHashTable *tags)
   char **keys;
   gint n, i;
 
-  keys = g_hash_table_get_keys_as_array (tags, &n);
+  keys = (char **) g_hash_table_get_keys_as_array (tags, &n);
   for (i = 0; i < n; i++) {
     g_print ("%s = %s\n", keys[i], g_hash_table_lookup (tags, keys[i]));
   }
@@ -289,17 +289,15 @@ mapbox_process_feature (VTileMapbox *mapbox,
 
   if (layer_index == MAPBOX_RENDER_LAYER_ROADS) {
     tag_value = g_hash_table_lookup (tags, "is_tunnel");
-    if (tag_value) {
-      if (!g_strcmp0 (tag_value, "yes"))
+    if (tag_value && !g_strcmp0 (tag_value, "yes"))
         layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
-    } else {
+    else {
       tag_value = g_hash_table_lookup (tags, "is_bridge");
-      if (tag_value) {
-        if (!g_strcmp0 (tag_value, "yes"))
+      if (tag_value &&  !g_strcmp0 (tag_value, "yes"))
           layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
-      }
     }
   }
+
   data->layer_index = layer_index;
   mapbox->priv->render_layers[layer_index] =
     g_list_prepend (mapbox->priv->render_layers[layer_index], data);
@@ -370,10 +368,10 @@ mapbox_render_feature (MapboxFeatureData *data,
   /* Set dashes */
   value = vtile_mapcss_style_get (data->style, "dashes");
 
-    mapbox_render_geometry (data, cr);
+  mapbox_render_geometry (data, cr);
 
   if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
-    cairo_stroke_preserve  (cr);
+    cairo_stroke_preserve (cr);
 
     /* Set the fill color */
     value = vtile_mapcss_style_get (data->style, "fill-color");
@@ -538,4 +536,55 @@ vtile_mapbox_render_finish (VTileMapbox *mapbox,
   g_return_val_if_fail (g_task_is_valid (result, mapbox), FALSE);
 
   return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+void
+vtile_mapbox_dump_info (VTileMapbox *mapbox)
+{
+  gint l, f;
+  VectorTile__Tile *tile;
+
+  tile = vector_tile__tile__unpack (NULL,
+                                    mapbox->priv->size,
+                                    mapbox->priv->data);
+  if (!tile)
+    return;
+
+  for (l = 0; l < tile->n_layers; l++) {
+    guint layer_index;
+    VectorTile__Tile__Layer *layer = tile->layers[l];
+
+    g_print ("New layer: %s\n", layer->name);
+
+    layer_index = mapbox_get_layer_index (layer->name);
+    for (f = 0; f < layer->n_features; f++) {
+      VectorTile__Tile__Feature *feature = layer->features[f];
+      gint n;
+
+      g_print ("New feature: %d\n", feature->id);
+      for (n = 0; n < feature->n_tags; n += 2) {
+        char *key = layer->keys[feature->tags[n]];
+        VectorTile__Tile__Value *value = layer->values[feature->tags[n + 1]];
+
+        g_print ("%s = ", key);
+
+        if (value->string_value)
+          g_print ("%s (string)\n", value->string_value);
+        else if (value->has_float_value)
+          g_print ("%f (float)\n", value->float_value);
+        else if (value->has_double_value)
+          g_print ("%f (double)\n", value->double_value);
+        else if (value->has_int_value)
+          g_print ("%d (int)\n", value->int_value);
+        else if (value->has_uint_value)
+          g_print ("%u (uint)\n", value->uint_value);
+        else if (value->has_sint_value)
+          g_print ("%d (sint)\n", value->sint_value);
+        else if (value->has_bool_value)
+          g_print ("%s (boolean)\n", value->bool_value ? "true" : "false");
+      }
+      g_print("\n");
+    }
+  }
+  vector_tile__tile__free_unpacked (tile, NULL);
 }
