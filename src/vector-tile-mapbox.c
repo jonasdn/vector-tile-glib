@@ -18,7 +18,7 @@
 #include <gio/gio.h>
 #include <cairo.h>
 
-#include "vector-tile-mapcss.h"
+#include "vector-tile-mapcss-private.h"
 #include "vector-tile-mapcss-style.h"
 #include "vector-tile-mapbox.h"
 #include "vector_tile.pb-c.h"
@@ -34,7 +34,8 @@ enum {
 struct _VTileMapboxPrivate {
   guint8 *data;
   gssize size;
-  gint tile_size;
+  guint tile_size;
+  guint zoom_level;
 
   VTileMapCSS *stylesheet;
 };
@@ -62,7 +63,10 @@ vtile_mapbox_init (VTileMapbox *mapbox)
 }
 
 VTileMapbox *
-vtile_mapbox_new (guint8 *data, gssize size, gint tile_size)
+vtile_mapbox_new (guint8 *data,
+                  gssize size,
+                  guint tile_size,
+                  guint zom_level)
 {
   VTileMapbox *mapbox;
 
@@ -71,6 +75,7 @@ vtile_mapbox_new (guint8 *data, gssize size, gint tile_size)
   mapbox->priv->data = data;
   mapbox->priv->size = size;
   mapbox->priv->tile_size = tile_size;
+  mapbox->priv->zoom_level;
 
   return mapbox;
 }
@@ -96,25 +101,18 @@ mapbox_get_tags (VectorTile__Tile__Feature *feature,
     VectorTile__Tile__Value *value = layer->values[feature->tags[n + 1]];
 
     if (value->string_value) {
-      if (!g_strcmp0 (key, "kind")) {
-        g_print ("added: %s %s\n", layer->name, value->string_value);
+      if (!g_strcmp0 (key, "kind"))
         g_hash_table_insert (tags, layer->name, value->string_value);
-      }
-      else {
+      else
         g_hash_table_insert (tags, key, value->string_value);
-        g_print ("added: %s %s\n", key, value->string_value);
-      }
     }
   }
 
   if (!added_kind) {
-    if (!g_hash_table_lookup (tags, layer->name)) {
+    if (!g_hash_table_lookup (tags, layer->name))
       g_hash_table_insert (tags, layer->name, "dummy");
-      g_print ("added: %s %s\n", layer->name, "dummy");
-    }
   }
 
-  g_print ("\n\n");
   return tags;
 }
 
@@ -134,19 +132,19 @@ mapbox_feature_get_style (VTileMapbox *mapbox,
     {
     case VECTOR_TILE__TILE__GEOM_TYPE__POLYGON:
       style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "area",
-                                      tags, 1);
+                                      tags, mapbox->priv->zoom_level);
       break;
     case VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING:
       style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "way",
-                                      tags, 1);
+                                      tags, mapbox->priv->zoom_level);
       break;
     case VECTOR_TILE__TILE__GEOM_TYPE__POINT:
       style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node",
-                                      tags, 1);
+                                      tags, mapbox->priv->zoom_level);
       break;
     default:
       style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node",
-                                      tags, 1);
+                                      tags, mapbox->priv->zoom_level);
       break;
     }
 
@@ -365,14 +363,12 @@ mapbox_render_tile (VTileMapbox *mapbox, VectorTile__Tile *tile,
 }
 
 gboolean
-vtile_mapbox_render_to_cairo (VTileMapbox *mapbox, cairo_t *cr,
-                              GError **error)
+vtile_mapbox_render (VTileMapbox *mapbox, cairo_t *cr,
+                     GError **error)
 {
   VectorTile__Tile *tile;
   gint n;
   gboolean status;
-
-  g_print ("mapbox: %p %d %p\n", mapbox, mapbox->priv->size, mapbox->priv->data);
 
   g_return_val_if_fail (mapbox != NULL, FALSE);
   g_return_val_if_fail (cr != NULL, FALSE);
@@ -388,4 +384,43 @@ vtile_mapbox_render_to_cairo (VTileMapbox *mapbox, cairo_t *cr,
   vector_tile__tile__free_unpacked (tile, NULL);
 
   return status;
+}
+
+static void
+vtile_mapbox_render_thread (GTask *task,
+                            VTileMapbox *mapbox,
+                            cairo_t *cr,
+                            GCancellable *cancellable)
+{
+  GError *error = NULL;
+  gboolean success;
+
+  success = vtile_mapbox_render (mapbox, cr, &error);
+  if (success)
+    g_task_return_boolean (task, success);
+  else
+    g_task_return_error (task, error);
+}
+
+void vtile_mapbox_render_async (VTileMapbox *mapbox,
+                                cairo_t *cr,
+                                GAsyncReadyCallback callback,
+                                gpointer user_data)
+{
+  GTask *task;
+
+  task = g_task_new (mapbox, NULL, callback, user_data);
+  g_task_set_task_data (task, cr, NULL);
+  g_task_run_in_thread (task, (GTaskThreadFunc) vtile_mapbox_render_thread);
+  g_object_unref (task);
+}
+
+gboolean
+vtile_mapbox_render_finish (VTileMapbox *mapbox,
+                            GAsyncResult *result,
+                            GError **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, mapbox), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (result), error);
 }

@@ -62,6 +62,11 @@ struct _VTileMapCSSPrivate {
   char *parse_error;
 };
 
+VTileMapCSSStyle *vtile_mapcss_get_style (VTileMapCSS *mapcss,
+                                          const char *selector_name,
+                                          GHashTable *tags,
+                                          guint zoom);
+
 gboolean
 vector_tile_mapcss_add_selector (VTileMapCSS *mapcss,
                                  VTileMapCSSSelector *selector);

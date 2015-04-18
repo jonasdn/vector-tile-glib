@@ -37,26 +37,33 @@ typedef struct _VTileMapCSS        VTileMapCSS;
 typedef struct _VTileMapCSSClass   VTileMapCSSClass;
 typedef struct _VTileMapCSSPrivate VTileMapCSSPrivate;
 
+/**
+ * VTileMapCSS:
+ *
+ * All the fields in the #VTileMapCSS structure are private and should
+ * never be accessed directly.
+**/
 struct _VTileMapCSS {
   /* <private> */
   GObject parent_instance;
   VTileMapCSSPrivate *priv;
 };
 
+/**
+ * VTileMapCSSClass:
+ *
+ * All the fields in the #VTileMapCSSClass structure are private and should
+ * never be accessed directly.
+**/
 struct _VTileMapCSSClass {
   /* <private> */
   GObjectClass parent_class;
 };
 
 VTileMapCSS *vtile_mapcss_new (void);
-gboolean vector_tile_mapcss_load (VTileMapCSS *mapcss,
-                                  const char *filename,
-                                  GError **error);
-VTileMapCSSStyle *vtile_mapcss_get_style (VTileMapCSS *mapcss,
-                                          const char *slector,
-                                          GHashTable *tags,
-                                          guint zoom);
-
+gboolean vtile_mapcss_load (VTileMapCSS *mapcss,
+                            const char *filename,
+                            GError **error);
 G_END_DECLS
 
 #endif /* VECTOR_TILE_MAPCSS */

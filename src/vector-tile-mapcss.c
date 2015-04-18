@@ -144,6 +144,11 @@ vtile_mapcss_init (VTileMapCSS *mapcss)
                                                    vtile_mapcss_free_selectors);
 }
 
+/**
+ * vtile_mapcss_new:
+ *
+ * Returns: a new #GeocodeForward. Use g_object_unref() when done.
+ **/
 VTileMapCSS *
 vtile_mapcss_new (void)
 {

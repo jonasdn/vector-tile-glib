@@ -8,12 +8,15 @@
 
 static char *output;
 static char **input = NULL;
-static gint tile_size;
+static guint tile_size;
+static guint zoom_level;
 
 static GOptionEntry entries[] =
   {
     { "size", 's', 0, G_OPTION_ARG_INT, &tile_size,
       "The size of the tile, default: 256", NULL },
+    { "zoom", 'z', 0, G_OPTION_ARG_INT, &zoom_level,
+      "The zoom-level of the tile, default: 0", NULL },
     { "output", 'o', 0, G_OPTION_ARG_FILENAME, &output,
       "Output PNG filename, default: 'image.png'", NULL },
     { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &input,
@@ -104,10 +107,10 @@ main (int argc, char **argv)
     return 0;
   }
 
-  mapbox = vtile_mapbox_new (tile_buffer, size, tile_size);
+  mapbox = vtile_mapbox_new (tile_buffer, size, tile_size, zoom_level);
   vtile_mapbox_set_stylesheet (mapbox, stylesheet);
 
-  if (!vtile_mapbox_render_to_cairo (mapbox, cr, NULL)) {
+  if (!vtile_mapbox_render (mapbox, cr, NULL)) {
     g_print ("Failed to render!\n");
   } else {
     cairo_surface_write_to_png (surface, output);
