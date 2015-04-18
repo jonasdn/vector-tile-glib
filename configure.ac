@@ -25,6 +25,14 @@ fi
 
 LT_INIT([disable-static])
 
-AC_CONFIG_FILES([Makefile src/Makefile demos/Makefile test/Makefile])
+VTILE_LT_VERSION=0:0:0
+AC_SUBST(VTILE_LT_VERSION)
+
+AC_CONFIG_FILES([
+        vector-tile-glib-1.0.pc
+        Makefile
+        src/Makefile
+        demos/Makefile
+        test/Makefile])
 
 AC_OUTPUT

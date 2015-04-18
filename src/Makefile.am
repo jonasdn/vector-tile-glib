@@ -2,6 +2,13 @@ lib_LTLIBRARIES = libvector-tile-glib.la
 libvector_tile_glib_la_PUBLICSOURCES =					\
 	vector-tile-mapbox.c						\
 	vector-tile-mapcss.c
+
+libvector_tile_glib_la_HEADERS =					\
+	vector-tile-mapbox.h						\
+	vector-tile-mapcss.h						\
+	vector-tile-mapcss-style.h					\
+	vector-tile-mapcss-private.h
+
 libvector_tile_glib_la_SOURCES =					\
 	vector-tile-mapbox.c						\
 	vector-tile-mapcss.c						\
