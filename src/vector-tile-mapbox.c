@@ -131,7 +131,7 @@ mapbox_print_tags (GHashTable *tags)
 static GHashTable *
 mapbox_get_tags (VectorTile__Tile__Feature *feature,
                  VectorTile__Tile__Layer *layer,
-                 MapboxLayerData *layer_data)
+                 char *primary_tag)
 {
   gint n;
   gint added_kind = 0;
@@ -145,7 +145,7 @@ mapbox_get_tags (VectorTile__Tile__Feature *feature,
 
     if (value->string_value) {
       if (!g_strcmp0 (key, "kind")) {
-        g_hash_table_insert (tags, layer_data->primary_tag,
+        g_hash_table_insert (tags, primary_tag,
                              value->string_value);
       } else
         g_hash_table_insert (tags, key, value->string_value);
@@ -153,8 +153,8 @@ mapbox_get_tags (VectorTile__Tile__Feature *feature,
   }
 
   if (!added_kind) {
-    if (!g_hash_table_lookup (tags, layer_data->primary_tag))
-      g_hash_table_insert (tags, layer->name, "");
+    if (!g_hash_table_lookup (tags, primary_tag))
+      g_hash_table_insert (tags, primary_tag, "");
   }
 
   return tags;
@@ -276,7 +276,8 @@ static void
 mapbox_process_feature (VTileMapbox *mapbox,
                         VectorTile__Tile__Feature *feature,
                         VectorTile__Tile__Layer *layer,
-                        MapboxLayerData *layer_data)
+                        char *primary_tag,
+                        guint layer_index)
 {
   MapboxFeatureData *data;
   VTileMapCSSValue *value;
@@ -284,7 +285,7 @@ mapbox_process_feature (VTileMapbox *mapbox,
   char *tag_value;
   GList *render_layer;
 
-  tags = mapbox_get_tags (feature, layer, layer_data);
+  tags = mapbox_get_tags (feature, layer, primary_tag);
 
   data = g_new (MapboxFeatureData, 1);
   data->style = mapbox_feature_get_style (mapbox, tags, feature, layer);
@@ -294,20 +295,19 @@ mapbox_process_feature (VTileMapbox *mapbox,
   data->tile_size = mapbox->priv->tile_size;
   data->feature = feature;
 
-  if (layer_data->index == MAPBOX_RENDER_LAYER_ROADS) {
+  if (layer_index == MAPBOX_RENDER_LAYER_ROADS) {
     tag_value = g_hash_table_lookup (tags, "is_tunnel");
     if (tag_value && !g_strcmp0 (tag_value, "yes"))
-        layer_data->index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
+        layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
     else {
       tag_value = g_hash_table_lookup (tags, "is_bridge");
       if (tag_value &&  !g_strcmp0 (tag_value, "yes"))
-          layer_data->index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
+          layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
     }
   }
 
-  data->layer_data = layer_data;
-  mapbox->priv->render_layers[layer_data->index] =
-    g_list_prepend (mapbox->priv->render_layers[layer_data->index], data);
+  mapbox->priv->render_layers[layer_index] =
+    g_list_prepend (mapbox->priv->render_layers[layer_index], data);
   g_hash_table_destroy (tags);
 }
 
@@ -418,46 +418,42 @@ mapbox_set_canvas_style (VTileMapbox *mapbox,
   cairo_fill (cr);
 }
 
-static MapboxLayerData *
-mapbox_get_layer_data (const char *name)
+static void
+mapbox_get_layer_data (const char *name,
+                       char **primary_tag,
+                       guint *layer_index)
 {
-  MapboxLayerData *layer_data;
-
-  layer_data = g_new (MapboxLayerData, 1);
-
   if (!g_strcmp0 (name, "water")) {
-    layer_data->index = MAPBOX_RENDER_LAYER_WATER;
-    layer_data->primary_tag = "water";
+    *layer_index = MAPBOX_RENDER_LAYER_WATER;
+    *primary_tag = "water";
   } else if (!g_strcmp0 (name, "earth")) {
-    layer_data->index = MAPBOX_RENDER_LAYER_EARTH;
-    layer_data->primary_tag = "earth";
+    *layer_index = MAPBOX_RENDER_LAYER_EARTH;
+    *primary_tag = "earth";
   } else if (!g_strcmp0 (name, "places")) {
-    layer_data->index = MAPBOX_RENDER_LAYER_PLACES;
-    layer_data->primary_tag = "place";
+    *layer_index = MAPBOX_RENDER_LAYER_PLACES;
+    *primary_tag = "place";
   } else if (!g_strcmp0 (name, "landuse")) {
-    layer_data->index = MAPBOX_RENDER_LAYER_LANDUSE;
-    layer_data->primary_tag = "landuse";
+    *layer_index = MAPBOX_RENDER_LAYER_LANDUSE;
+    *primary_tag = "landuse";
   } else if (!g_strcmp0 (name, "roads")) {
-    layer_data->index = MAPBOX_RENDER_LAYER_ROADS;
-    layer_data->primary_tag = "road";
+    *layer_index = MAPBOX_RENDER_LAYER_ROADS;
+    *primary_tag = "road";
   } else if (!g_strcmp0 (name, "buildings")) {
-    layer_data->index = MAPBOX_RENDER_LAYER_BUILDINGS;
-    layer_data->primary_tag = "building";
+    *layer_index = MAPBOX_RENDER_LAYER_BUILDINGS;
+    *primary_tag = "building";
   } else {
-    layer_data->index = MAPBOX_RENDER_LAYER_POI;
-    layer_data->primary_tag = "poi";
+    *layer_index = MAPBOX_RENDER_LAYER_POI;
+    *primary_tag = "poi";
   }
-
-  return layer_data;
 }
 
 static gint
 mapbox_compare_z_index (const MapboxFeatureData *a,
                         const MapboxFeatureData *b)
 {
-  if (a < b)
+  if (a->z_index < b->z_index)
     return -1;
-  else if (a > b)
+  else if (a->z_index > b->z_index)
     return 1;
 
   return 0;
@@ -472,15 +468,16 @@ mapbox_render_tile (VTileMapbox *mapbox,
   gint l, f;
 
   for (l = 0; l < tile->n_layers; l++) {
-    MapboxLayerData *layer_data;
+    char *primary_tag;
+    guint layer_index;
     VectorTile__Tile__Layer *layer = tile->layers[l];
 
-    layer_data = mapbox_get_layer_data (layer->name);
+    mapbox_get_layer_data (layer->name, &primary_tag, &layer_index);
 
     for (f = 0; f < layer->n_features; f++) {
       VectorTile__Tile__Feature *feature = layer->features[f];
 
-      mapbox_process_feature (mapbox, feature, layer, layer_data);
+      mapbox_process_feature (mapbox, feature, layer, primary_tag, layer_index);
     }
   }
 
@@ -573,12 +570,13 @@ vtile_mapbox_dump_info (VTileMapbox *mapbox)
     return;
 
   for (l = 0; l < tile->n_layers; l++) {
-    MapboxLayerData *layer_data;
+    char *primary_tag;
+    guint layer_index;
     VectorTile__Tile__Layer *layer = tile->layers[l];
 
     g_print ("New layer: %s\n", layer->name);
 
-    layer_data = mapbox_get_layer_data (layer->name);
+    mapbox_get_layer_data (layer->name, &primary_tag, &layer_index);
     for (f = 0; f < layer->n_features; f++) {
       VectorTile__Tile__Feature *feature = layer->features[f];
       gint n;

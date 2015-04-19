@@ -45,8 +45,7 @@ rule ::= selector_list(A) LBRACE declaration_list(B) RBRACE . {
     VTileMapCSSSelector *selector = (VTileMapCSSSelector *) l->data;
     GList *declarations;
 
-    declarations = g_list_copy_deep (B.list, (GCopyFunc) g_object_ref, NULL);
-    vtile_mapcss_selector_add_declarations (selector, declarations);
+    vtile_mapcss_selector_add_declarations (selector, B.list);
     vtile_mapcss_add_selector (parser, selector);
   }
 

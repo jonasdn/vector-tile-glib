@@ -169,9 +169,7 @@ vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
     g_hash_table_insert (selector->priv->declarations,
                          g_strdup (vtile_mapcss_declaration_get_property (declaration)),
                          vtile_mapcss_value_copy (vtile_mapcss_declaration_get_value (declaration)));
-    g_object_unref (declaration);
   }
-  g_list_free (l);
 }
 
 GHashTable *
