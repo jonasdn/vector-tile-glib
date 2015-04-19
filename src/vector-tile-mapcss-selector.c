@@ -60,7 +60,10 @@ static void
 vtile_mapcss_selector_init (VTileMapCSSSelector *selector)
 {
   selector->priv = vtile_mapcss_selector_get_instance_private (selector);
-  selector->priv->declarations = g_hash_table_new (g_str_hash, g_str_equal);
+  selector->priv->declarations = g_hash_table_new_full (g_str_hash,
+                                                        g_str_equal,
+                                                        g_free,
+                                                        (GDestroyNotify) vtile_mapcss_value_free);
   selector->priv->zoom_levels = NULL;
 }
 
@@ -164,9 +167,11 @@ vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
     VTileMapCSSDeclaration *declaration = (VTileMapCSSDeclaration *) l->data;
 
     g_hash_table_insert (selector->priv->declarations,
-                         vtile_mapcss_declaration_get_property (declaration),
-                         vtile_mapcss_declaration_get_value (declaration));
+                         g_strdup (vtile_mapcss_declaration_get_property (declaration)),
+                         vtile_mapcss_value_copy (vtile_mapcss_declaration_get_value (declaration)));
+    g_object_unref (declaration);
   }
+  g_list_free (l);
 }
 
 GHashTable *

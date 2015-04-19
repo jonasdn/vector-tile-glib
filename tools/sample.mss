@@ -62,7 +62,7 @@ area[water], way[water], area[natural=water] {
     fill-color: #4A90D9;
 }
 
-area[buildings] {
+area[building] {
     color: #777777;
     fill-color: #C7B8A4;
 }

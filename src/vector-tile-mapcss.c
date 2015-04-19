@@ -338,6 +338,7 @@ vtile_mapcss_apply_selector (VTileMapCSSSelector *selector,
     value = vtile_mapcss_value_copy (g_hash_table_lookup (declarations, keys[i]));
     g_hash_table_insert (style->properties, property, value);
   }
+  g_free (keys);
 }
 
 static gboolean
