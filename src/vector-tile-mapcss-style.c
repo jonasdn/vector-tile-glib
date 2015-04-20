@@ -121,7 +121,11 @@ vtile_mapcss_style_new ()
 
   vtile_mapcss_style_add_num (style, "width", 1.0);
   vtile_mapcss_style_add_num (style, "z-index", 0.0);
+  vtile_mapcss_style_add_num (style, "opacity", 1.0);
+  vtile_mapcss_style_add_num (style, "fill-opacity", 1.0);
+  vtile_mapcss_style_add_num (style, "casing-opacity", 1.0);
   vtile_mapcss_style_add_num (style, "casing-width", 0.0);
+
   vtile_mapcss_style_add_color (style, "fill-color",
                                 (VTileMapCSSColor) {
                                   .r = 0.5,

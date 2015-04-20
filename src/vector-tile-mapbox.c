@@ -279,16 +279,19 @@ mapbox_render_geometry (MapboxFeatureData *data,
 
   if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
     VTileMapCSSColor *color;
+    gdouble opacity;
 
     cairo_stroke_preserve (cr);
 
     cairo_save (cr);
     cairo_clip (cr);
+    opacity = vtile_mapcss_style_get_num (data->style, "fill-opacity");
     color = vtile_mapcss_style_get_color (data->style, "fill-color");
-    cairo_set_source_rgb (cr,
-                          color->r,
-                          color->g,
-                          color->b);
+    cairo_set_source_rgba (cr,
+                           color->r,
+                           color->g,
+                           color->b,
+                           opacity);
     cairo_paint (cr);
     cairo_restore (cr);
   } else {
@@ -309,16 +312,19 @@ mapbox_render_casings (MapboxFeatureData *data,
   VTileMapCSSLineCap c_line_cap;
   VTileMapCSSLineJoin c_line_join;
   gdouble c_width;
+  gdouble opacity;
 
   c_width = vtile_mapcss_style_get_num (data->style, "casing-width");
   if (!c_width)
     return;
 
+  opacity = vtile_mapcss_style_get_num (data->style, "casing-opacity");
   color = vtile_mapcss_style_get_color (data->style, "casing-color");
-  cairo_set_source_rgb (cr,
+  cairo_set_source_rgba (cr,
                         color->r,
                         color->g,
-                        color->b);
+                        color->b,
+                        opacity);
   c_width = line_width + (2 * c_width);
   cairo_set_line_width (cr, c_width);
 
@@ -351,7 +357,7 @@ mapbox_render_lines (MapboxFeatureData *data,
   VTileMapCSSDash *dash;
   VTileMapCSSLineCap line_cap;
   VTileMapCSSLineJoin line_join;
-  gdouble line_width;
+  gdouble line_width, opacity;
 
   line_width = vtile_mapcss_style_get_num (data->style, "width");
   dash = vtile_mapcss_style_get_dash (data->style, "dashes");
@@ -361,11 +367,13 @@ mapbox_render_lines (MapboxFeatureData *data,
   if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING)
     mapbox_render_casings (data, cr, line_width, line_join, line_cap, dash);
 
+  opacity = vtile_mapcss_style_get_num (data->style, "opacity");
   color = vtile_mapcss_style_get_color (data->style, "color");
-  cairo_set_source_rgb (cr,
-                        color->r,
-                        color->g,
-                        color->b);
+  cairo_set_source_rgba (cr,
+                         color->r,
+                         color->g,
+                         color->b,
+                         opacity);
 
   cairo_set_line_width (cr, line_width);
   cairo_set_line_cap (cr, line_cap);
@@ -443,15 +451,18 @@ mapbox_set_canvas_style (VTileMapbox *mapbox,
 {
   VTileMapCSSStyle *style;
   VTileMapCSSColor *color;
+  gdouble opacity;
 
   style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "canvas",
                                   NULL, mapbox->priv->zoom_level);
 
+  color = vtile_mapcss_style_get_color (style, "fill-opacity");
   color = vtile_mapcss_style_get_color (style, "fill-color");
-  cairo_set_source_rgb (cr,
-                        color->r,
-                        color->g,
-                        color->b);
+  cairo_set_source_rgba (cr,
+                         color->r,
+                         color->g,
+                         color->b,
+                         opacity);
   vtile_mapcss_style_free (style);
 
   cairo_rectangle (cr, 0, 0,
