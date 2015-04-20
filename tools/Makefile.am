@@ -1,17 +1,22 @@
-noinst_PROGRAMS = tile-to-png dump-info get-tile
+noinst_PROGRAMS = tile-to-png dump-info
 
-AM_CPPFLAGS = $(VECTOR_TILE_CFLAGS) -I$(top_srcdir)/src
+AM_CPPFLAGS =								\
+	$(VECTOR_TILE_CFLAGS)						\
+	-I$(top_srcdir)/src
+LDADD = $(VECTOR_TILE_LIBS) $(top_srcdir)/src/libvector-tile-glib.la
 
 tile_to_png_SOURCES = tile-to-png.c
-tile_to_png_LDADD = $(VECTOR_TILE_LIBS) ../src/libvector-tile-glib.la
-
-get_tile_SOURCES = get-tile.c
-get_tile_LDADD = $(VECTOR_TILE_LIBS) ../src/libvector-tile-glib.la
-get_tile_LDFLAGS = `pkg-config --libs geocode-glib-1.0`
-get_tile_CFLAGS = `pkg-config --cflags geocode-glib-1.0`
-
 dump_info_SOURCES = dump-info.c
-dump_info_LDADD = $(VECTOR_TILE_LIBS) ../src/libvector-tile-glib.la
+
+if HAVE_GEOCODE_GLIB
+noinst_PROGRAMS += get-tile
+get_tile_SOURCES = get-tile.c
+get_tile_LDADD =							\
+	$(GEOCODE_GLIB_LIBS)						\
+	-lm
+get_tile_CFLAGS = $(GEOCODE_GLIB_CFLAGS)
+endif
+
 
 .PHONY: debug
 debug: tile-to-png
