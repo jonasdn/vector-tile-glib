@@ -50,12 +50,15 @@ BUILT_SOURCES =								\
 	$(flex_source_mapcss)						\
 	$(flex_header_mapcss)
 
+$(proto_header): $(proto_source)
 $(proto_source): $(proto_file)
 	protoc-c --c_out=$(srcdir) $<
 
+$(lemon_header_mapcss): $(lemon_source_mapcss)
 $(lemon_source_mapcss): $(lemon_file_mapcss)
 	-lemon $<
 
+$(flex_header_mapcss): $(flex_source_mapcss)
 $(flex_source_mapcss): $(flex_file_mapcss)
 	flex --outfile=$@ --header-file=$(flex_header_mapcss) $<
 
