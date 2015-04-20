@@ -614,6 +614,7 @@ vtile_mapbox_dump_info (VTileMapbox *mapbox)
 {
   gint l, f;
   VectorTile__Tile *tile;
+  GHashTable *tags;
 
   tile = vector_tile__tile__unpack (NULL,
                                     mapbox->priv->size,
@@ -638,6 +639,7 @@ vtile_mapbox_dump_info (VTileMapbox *mapbox)
         char *key = layer->keys[feature->tags[n]];
         VectorTile__Tile__Value *value = layer->values[feature->tags[n + 1]];
 
+        g_print ("key/value from tile:\n");
         g_print ("%s = ", key);
 
         if (value->string_value)
@@ -655,6 +657,9 @@ vtile_mapbox_dump_info (VTileMapbox *mapbox)
         else if (value->has_bool_value)
           g_print ("%s (boolean)\n", value->bool_value ? "true" : "false");
       }
+      g_print ("\nstylable tags:\n");
+      tags = mapbox_get_tags (feature, layer, primary_tag);
+      mapbox_print_tags (tags);
       g_print("\n");
     }
   }
