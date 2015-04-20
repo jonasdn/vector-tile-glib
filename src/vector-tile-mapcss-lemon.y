@@ -63,6 +63,21 @@ selector_list(A) ::= selector(B) . {
 }
 
 selector(A) ::= selector_type(B) zoom_levels(C) tag_tests(D) . {
+  char *area_value = NULL;
+  if (!g_strcmp0 (B.str, "area"))
+    area_value = g_strdup ("yes");
+  else if (!g_strcmp0 (B.str, "line"))
+    area_value = g_strdup ("no");
+
+  if (area_value) {
+    VTileMapCSSTest *test = vtile_mapcss_test_new ();
+
+    test->tag = g_strdup (B.str);
+    test->operator = VTILE_MAPCSS_TEST_TAG_EQUALS;
+    test->value = area_value;
+    D.list = g_list_prepend (D.list, test);
+  }
+
   A.selector = vtile_mapcss_selector_new (B.str, D.list, C.range);
 }
 
@@ -90,12 +105,12 @@ zoom_levels(A) ::= . {
 
 tag_tests(A) ::= tag_tests(B) tag_test(C) . {
   A.list = B.list;
-  A.list = g_list_append (A.list, C.test);
+  A.list = g_list_prepend (A.list, C.test);
 }
 
 tag_tests(A) ::= tag_test(B) . {
   A.list = NULL;
-  A.list = g_list_append (A.list, B.test);
+  A.list = g_list_prepend (A.list, B.test);
 }
 
 tag_tests(A) ::= . {
@@ -132,19 +147,7 @@ test(A) ::= IDENT(B) NOT EQUAL IDENT(C) . {
   A.test->operator = VTILE_MAPCSS_TEST_TAG_NOT_EQUALS;
 }
 
-selector_type(A) ::= NODE_SELECTOR(B) . {
-  A.str = B.str;
-}
-
-selector_type(A) ::= WAY_SELECTOR(B) . {
-  A.str = B.str;
-}
-
-selector_type(A) ::= AREA_SELECTOR(B) . {
-  A.str = B.str;
-}
-
-selector_type(A) ::= CANVAS_SELECTOR(B) . {
+selector_type(A) ::= SELECTOR_NAME(B) . {
   A.str = B.str;
 }
 

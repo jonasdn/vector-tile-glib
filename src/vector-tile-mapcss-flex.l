@@ -52,28 +52,10 @@ zoomlevel      "z"([0-9]|[0-9]{2})
   BEGIN(INITIAL);
 }
 
-"node" {
+"area"|"node"|"way"|"line"|"canvas" {
   yylval.str = g_strdup (yytext);
 
-  return NODE_SELECTOR;
-}
-
-"way" {
-  yylval.str = g_strdup (yytext);
-
-  return WAY_SELECTOR;
-}
-
-"canvas" {
-  yylval.str = g_strdup (yytext);
-
-  return CANVAS_SELECTOR;
-}
-
-"area" {
-  yylval.str = g_strdup (yytext);
-
-  return AREA_SELECTOR;
+  return SELECTOR_NAME;
 }
 
 "none" {

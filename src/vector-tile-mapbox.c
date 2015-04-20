@@ -158,6 +158,11 @@ mapbox_get_tags (VectorTile__Tile__Feature *feature,
       g_hash_table_insert (tags, primary_tag, "");
   }
 
+  if (feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON)
+    g_hash_table_insert (tags, "area", "yes");
+  else if (feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING)
+    g_hash_table_insert (tags, "area", "no");
+
   return tags;
 }
 
