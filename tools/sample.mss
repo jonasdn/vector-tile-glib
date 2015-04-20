@@ -53,8 +53,14 @@ area {
 }
 
 area[landuse=park], area[landuse=playground], area[landuse=pitch] {
-    color: #73D216;
     fill-color: #73D216;
+    color: #73D216;
+}
+
+area[landuse=wood], area[landuse=scrub] {
+    fill-color: #0D6C00;
+    color: #0D6C00;
+    z-index: 1;
 }
 
 area[water], way[water], area[natural=water] {

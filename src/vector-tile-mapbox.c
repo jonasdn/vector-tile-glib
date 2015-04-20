@@ -35,6 +35,7 @@ enum {
   MAPBOX_RENDER_LAYER_EARTH,
   MAPBOX_RENDER_LAYER_LANDUSE,
   MAPBOX_RENDER_LAYER_WATER,
+  MAPBOX_RENDER_LAYER_LANDUSE_NATURE,
   MAPBOX_RENDER_LAYER_PLACES,
   MAPBOX_RENDER_LAYER_ROADS,
   MAPBOX_RENDER_LAYER_BUILDINGS,
@@ -274,14 +275,20 @@ mapbox_render_geometry (MapboxFeatureData *data,
   if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
     VTileMapCSSColor *color;
 
-    cairo_fill_preserve (cr);
+    cairo_stroke_preserve (cr);
+
+    cairo_save (cr);
+    cairo_clip (cr);
     color = vtile_mapcss_style_get_color (data->style, "fill-color");
     cairo_set_source_rgb (cr,
                           color->r,
                           color->g,
                           color->b);
+    cairo_paint (cr);
+    cairo_restore (cr);
+  } else {
+    cairo_stroke (cr);
   }
-  cairo_stroke (cr);
 }
 
 static void
@@ -346,7 +353,8 @@ mapbox_render_lines (MapboxFeatureData *data,
   line_cap = vtile_mapcss_style_get_enum (data->style, "linecap");
   line_join = vtile_mapcss_style_get_enum (data->style, "linejoin");
 
-  mapbox_render_casings (data, cr, line_width, line_join, line_cap, dash);
+  if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING)
+    mapbox_render_casings (data, cr, line_width, line_join, line_cap, dash);
 
   color = vtile_mapcss_style_get_color (data->style, "color");
   cairo_set_source_rgb (cr,
@@ -375,6 +383,17 @@ mapbox_render_feature (MapboxFeatureData *data,
   g_free (data);
 }
 
+static gboolean
+mapbox_move_feature_if (GHashTable *tags,
+                        const char *tag,
+                        const char *value)
+{
+  char *tag_value;
+
+  tag_value = g_hash_table_lookup (tags, tag);
+  return tag_value && !g_strcmp0 (tag_value, value);
+}
+
 static void
 mapbox_process_feature (VTileMapbox *mapbox,
                         VectorTile__Tile__Feature *feature,
@@ -384,7 +403,6 @@ mapbox_process_feature (VTileMapbox *mapbox,
 {
   MapboxFeatureData *data;
   GHashTable *tags;
-  char *tag_value;
 
   tags = mapbox_get_tags (feature, layer, primary_tag);
 
@@ -396,14 +414,17 @@ mapbox_process_feature (VTileMapbox *mapbox,
   data->feature = feature;
 
   if (layer_index == MAPBOX_RENDER_LAYER_ROADS) {
-    tag_value = g_hash_table_lookup (tags, "is_tunnel");
-    if (tag_value && !g_strcmp0 (tag_value, "yes"))
-        layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
-    else {
-      tag_value = g_hash_table_lookup (tags, "is_bridge");
-      if (tag_value &&  !g_strcmp0 (tag_value, "yes"))
-          layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
-    }
+    if (mapbox_move_feature_if (tags, "is_tunnel", "yes"))
+      layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
+    else if (mapbox_move_feature_if (tags, "is_bridge", "yes"))
+      layer_index = MAPBOX_RENDER_LAYER_BRIDGE_TUNNEL;
+  } else if (layer_index == MAPBOX_RENDER_LAYER_LANDUSE) {
+    if (mapbox_move_feature_if (tags, "landuse", "wood"))
+      layer_index = MAPBOX_RENDER_LAYER_LANDUSE_NATURE;
+    else if (mapbox_move_feature_if (tags, "landuse", "scrub"))
+      layer_index = MAPBOX_RENDER_LAYER_LANDUSE_NATURE;
+    else if (mapbox_move_feature_if (tags, "landuse", "rock"))
+      layer_index = MAPBOX_RENDER_LAYER_LANDUSE_NATURE;
   }
 
   mapbox->priv->render_layers[layer_index] =
