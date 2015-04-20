@@ -14,6 +14,10 @@ PKG_CHECK_MODULES([GEOCODE_GLIB], [geocode-glib-1.0],
    found_geocode=yes, found_geocode=no)
 AM_CONDITIONAL(HAVE_GEOCODE_GLIB, test "x$found_geocode" = "xyes")
 
+PKG_CHECK_MODULES([SOUP], [libsoup-2.4],
+   found_soup=yes, found_soup=no)
+AM_CONDITIONAL(HAVE_SOUP, test "x$found_soup" = "xyes")
+
 GOBJECT_INTROSPECTION_CHECK([0.6.3])
 
 AC_CHECK_PROG(PROTOCC_CHECK, protoc-c, yes)

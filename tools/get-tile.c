@@ -2,6 +2,7 @@
 #include <math.h>
 #include <gio/gio.h>
 #include <geocode-glib/geocode-glib.h>
+#include <libsoup/soup.h>
 
 #define BASE_URI "http://vector.mapzen.com/osm/all/"
 
@@ -9,6 +10,8 @@ static char *search;
 static gdouble longitude = -G_MAXDOUBLE;
 static gdouble latitude = -G_MAXDOUBLE;
 static gint zoom = -1;
+static guint x;
+static guint y;
 
 static GOptionEntry entries[] =
   {
@@ -23,21 +26,66 @@ static GOptionEntry entries[] =
     { NULL },
   };
 
-int tile_get_x ()
+static guint
+tile_get_x ()
 {
   return (int) (floor ((longitude + 180.0) / 360.0 * pow (2.0, zoom)));
 }
 
-int tile_get_y ()
+static guint
+tile_get_y ()
 {
   return (int) (floor ((1.0 - log (tan (latitude * M_PI/180.0) + 1.0 / cos (latitude * M_PI/180.0)) / M_PI) / 2.0 * pow (2.0, zoom)));
+}
+
+
+static void
+tile_download (char *uri)
+{
+  SoupSession *session;
+  SoupMessage *msg;
+  GOutputStream *stream;
+  gboolean success;
+  GError *error = NULL;
+  char *filename;
+  GFile *file;
+  guint status;
+  gsize written;
+
+  session = soup_session_new ();
+  msg = soup_message_new ("GET", uri);
+
+  g_print ("Downloading...\n");
+  status = soup_session_send_message (session, msg);
+  if (status != SOUP_STATUS_OK) {
+    g_print ("Failed to download: %s\n",
+             msg->reason_phrase ? msg->reason_phrase : "error");
+    exit (1);
+  }
+
+  filename = g_strdup_printf ("z%d-x%d-y%d.mapbox",
+                              zoom, x, y);
+  file = g_file_new_for_path (filename);
+
+  stream = (GOutputStream *) g_file_replace (file, NULL, FALSE, 0,
+                                             NULL, NULL);
+  success = g_output_stream_write_all (stream, msg->response_body->data,
+                                       msg->response_body->length, &written,
+                                       NULL, &error);
+  if (!success) {
+    g_print ("Writing file failed: %s\n", error->message);
+    exit (1);
+  }
+
+  g_print ("Downloaded file %s\n", filename);
+  g_free (filename);
 }
 
 int
 main (int argc, char **argv)
 {
   GOptionContext *context;
-  gint x, y;
+  GFile *file;
   char *uri;
   GError *error = NULL;
 
@@ -53,7 +101,6 @@ main (int argc, char **argv)
       g_print ("%s\n", g_option_context_get_help (context, FALSE, NULL));
       exit (1);
   }
-
 
   if ((latitude == -G_MAXDOUBLE  || longitude == -G_MAXDOUBLE) && !search)
     {
@@ -89,12 +136,12 @@ main (int argc, char **argv)
 
   x = tile_get_x ();
   y = tile_get_y ();
-
   uri = g_strdup_printf ("%s%d/%d/%d.mapbox",
                          BASE_URI, zoom, x, y);
 
   g_print ("Found tile: %s\n", uri);
-  g_free (uri);
+  tile_download (uri);
 
+  g_free (uri);
   return 0;
 }

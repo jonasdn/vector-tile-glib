@@ -9,12 +9,15 @@ tile_to_png_SOURCES = tile-to-png.c
 dump_info_SOURCES = dump-info.c
 
 if HAVE_GEOCODE_GLIB
+if HAVE_SOUP
 noinst_PROGRAMS += get-tile
 get_tile_SOURCES = get-tile.c
 get_tile_LDADD =							\
 	$(GEOCODE_GLIB_LIBS)						\
+	$(SOUP_LIBS)							\
 	-lm
-get_tile_CFLAGS = $(GEOCODE_GLIB_CFLAGS)
+get_tile_CFLAGS = $(GEOCODE_GLIB_CFLAGS) $(SOUP_CFLAGS)
+endif
 endif
 
 
