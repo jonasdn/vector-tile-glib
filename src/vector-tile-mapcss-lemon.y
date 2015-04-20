@@ -190,40 +190,148 @@ value(A) ::= line_join(B) . {
   A.value = B.value;
 }
 
+value(A) ::= font_weight(B) . {
+  A.value = B.value;
+}
+
+value(A) ::= font_style(B) . {
+  A.value = B.value;
+}
+
+value(A) ::= font_variant(B) . {
+  A.value = B.value;
+}
+
+value(A) ::= text_decoration(B) . {
+  A.value = B.value;
+}
+
+value(A) ::= text_transform(B) . {
+  A.value = B.value;
+}
+
+value(A) ::= text_position(B) . {
+  A.value = B.value;
+}
+
+text_position(A) ::= LINE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_TEXT_POSITION_LINE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+text_position(A) ::= CENTER . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_TEXT_POSITION_CENTER;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+text_transform(A) ::= NONE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_TEXT_TRANSFORM_NONE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+text_transform(A) ::= UPPERCASE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_TEXT_TRANSFORM_UPPERCASE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+text_transform(A) ::= LOWERCASE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_TEXT_TRANSFORM_LOWERCASE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+text_transform(A) ::= CAPITALIZE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_TEXT_TRANSFORM_CAPITALIZE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+text_decoration(A) ::= NONE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_TEXT_DECORATION_NONE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+text_decoration(A) ::= UNDERLINE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_TEXT_DECORATION_UNDERLINE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+font_variant(A) ::= NORMAL . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_FONT_VARIANT_NORMAL;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+font_variant(A) ::= SMALL_CAPS . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_FONT_VARIANT_SMALL_CAPS;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+font_style(A) ::= ITALIC . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_FONT_STYLE_ITALIC;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+font_style(A) ::= NORMAL . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_FONT_STYLE_NORMAL;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+font_weight(A) ::= BOLD . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_FONT_WEIGHT_BOLD;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+font_weight(A) ::= NORMAL . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_FONT_WEIGHT_BOLD;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
 line_cap(A) ::= NONE . {
   A.value = vtile_mapcss_value_new ();
-  A.value->line_cap = VTILE_MAPCSS_LINE_CAP_NONE;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_CAP;
+  A.value->enum_value = VTILE_MAPCSS_LINE_CAP_NONE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
 }
 
 line_cap(A) ::= SQUARE . {
   A.value = vtile_mapcss_value_new ();
-  A.value->line_cap = VTILE_MAPCSS_LINE_CAP_SQUARE;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_CAP;
+  A.value->enum_value = VTILE_MAPCSS_LINE_CAP_SQUARE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
 }
 
 line_cap(A) ::= ROUND . {
   A.value = vtile_mapcss_value_new ();
-  A.value->line_cap = VTILE_MAPCSS_LINE_CAP_ROUND;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_CAP;
+  A.value->enum_value = VTILE_MAPCSS_LINE_CAP_ROUND;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
 }
 
 line_join(A) ::= MITER . {
   A.value = vtile_mapcss_value_new ();
-  A.value->line_join = VTILE_MAPCSS_LINE_JOIN_MITER;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN;
+  A.value->enum_value = VTILE_MAPCSS_LINE_JOIN_MITER;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
 }
 
 line_join(A) ::= BEVEL . {
   A.value = vtile_mapcss_value_new ();
-  A.value->line_join = VTILE_MAPCSS_LINE_JOIN_BEVEL;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN;
+  A.value->enum_value = VTILE_MAPCSS_LINE_JOIN_BEVEL;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
 }
 
 line_join(A) ::= ROUND . {
   A.value = vtile_mapcss_value_new ();
-  A.value->line_join = VTILE_MAPCSS_LINE_JOIN_ROUND;
-  A.value->type = VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN;
+  A.value->enum_value = VTILE_MAPCSS_LINE_JOIN_ROUND;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
 }
 
 dash(A) ::= num_list(B) . {

@@ -12,8 +12,7 @@ typedef enum {
   VTILE_MAPCSS_VALUE_TYPE_NUMBER,
   VTILE_MAPCSS_VALUE_TYPE_STRING,
   VTILE_MAPCSS_VALUE_TYPE_DASH,
-  VTILE_MAPCSS_VALUE_TYPE_LINE_CAP,
-  VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN,
+  VTILE_MAPCSS_VALUE_TYPE_ENUM,
 } VTileMapCSSValueType;
 
 typedef enum {
@@ -27,6 +26,38 @@ typedef enum {
   VTILE_MAPCSS_LINE_JOIN_ROUND,
   VTILE_MAPCSS_LINE_JOIN_BEVEL
 } VTileMapCSSLineJoin;
+
+typedef enum {
+  VTILE_MAPCSS_TEXT_POSITION_LINE,
+  VTILE_MAPCSS_TEXT_POSITION_CENTER
+} VTileMapCSSTextPosition;
+
+typedef enum {
+  VTILE_MAPCSS_TEXT_TRANSFORM_NONE,
+  VTILE_MAPCSS_TEXT_TRANSFORM_UPPERCASE,
+  VTILE_MAPCSS_TEXT_TRANSFORM_LOWERCASE,
+  VTILE_MAPCSS_TEXT_TRANSFORM_CAPITALIZE
+} VTileMapCSSTextTransform;
+
+typedef enum {
+  VTILE_MAPCSS_TEXT_DECORATION_NONE,
+  VTILE_MAPCSS_TEXT_DECORATION_UNDERLINE
+} VTileMapCSSTextDecoration;
+
+typedef enum {
+  VTILE_MAPCSS_FONT_STYLE_NORMAL,
+  VTILE_MAPCSS_FONT_STYLE_ITALIC
+} VTileMapCSSFontStyle;
+
+typedef enum {
+  VTILE_MAPCSS_FONT_WEIGHT_NORMAL,
+  VTILE_MAPCSS_FONT_WEIGHT_BOLD
+} VTileMapCSSFontWeight;
+
+typedef enum {
+  VTILE_MAPCSS_FONT_VARIANT_NORMAL,
+  VTILE_MAPCSS_FONT_VARIANT_SMALL_CAPS
+} VTileMapCSSFontVariant;
 
 typedef struct {
   gdouble r;
@@ -44,8 +75,7 @@ typedef struct {
   union {
     VTileMapCSSColor color;
     VTileMapCSSDash dash;
-    VTileMapCSSLineCap line_cap;
-    VTileMapCSSLineJoin line_join;
+    gint enum_value;
     gdouble num;
     char *str;
   };

@@ -96,6 +96,46 @@ zoomlevel      "z"([0-9]|[0-9]{2})
   return MITER;
 }
 
+"normal" {
+  return NORMAL;
+}
+
+"bold" {
+  return BOLD;
+}
+
+"italic" {
+  return ITALIC;
+}
+
+"underline" {
+  return UNDERLINE;
+}
+
+"uppercase" {
+  return UPPERCASE;
+}
+
+"lowercase" {
+  return LOWERCASE;
+}
+
+"capitalize" {
+  return CAPITALIZE;
+}
+
+"line" {
+  return LINE;
+}
+
+"center" {
+  return CENTER;
+}
+
+"small-caps" {
+  return SMALL_CAPS;
+}
+
 {num} {
   yylval.value = vtile_mapcss_value_new ();
   yylval.value->num = g_ascii_strtod (yytext, NULL);
