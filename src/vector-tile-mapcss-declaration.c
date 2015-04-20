@@ -59,7 +59,6 @@ VTileMapCSSDeclaration *
 vtile_mapcss_declaration_new (char *property, VTileMapCSSValue *value)
 {
   VTileMapCSSDeclaration *declaration;
-  VTileMapCSSDeclarationPrivate *priv;
 
   declaration = g_object_new (VTILE_TYPE_MAPCSS_DECLARATION, NULL);
 

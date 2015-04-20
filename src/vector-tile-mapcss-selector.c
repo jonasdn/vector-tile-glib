@@ -72,7 +72,6 @@ VTileMapCSSSelector *
 vtile_mapcss_selector_new (char *name, GList *tests, gint *zoom_levels)
 {
   VTileMapCSSSelector *selector;
-  VTileMapCSSSelectorPrivate *priv;
 
   selector = g_object_new (VTILE_TYPE_MAPCSS_SELECTOR, NULL);
 

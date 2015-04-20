@@ -177,8 +177,6 @@ vtile_mapcss_parse (VTileMapCSS *mapcss, guint8 *data, gssize size,
   yyset_lineno (1, scanner);
   yyset_column (0, scanner);
   do {
-    gdouble val;
-
     lex_code = yylex (scanner);
     mapcss->priv->text = yyget_text (scanner);
     mapcss->priv->lineno = yyget_lineno (scanner);
@@ -281,7 +279,6 @@ void vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
 void vtile_mapcss_set_type_error (VTileMapCSS *mapcss)
 {
   char *msg;
-  gint i;
 
   msg = g_strdup_printf ("Unexpected type at %u:%u\n",
                          mapcss->priv->lineno, mapcss->priv->column);
@@ -294,7 +291,6 @@ vtile_mapcss_add_selector (VTileMapCSS *mapcss,
 {
   GQueue *selector_queue = NULL;
   gboolean push = TRUE;
-  GList *l;
   char * name;
   gint i;
 
