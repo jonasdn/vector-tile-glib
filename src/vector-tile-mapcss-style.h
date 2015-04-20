@@ -53,8 +53,14 @@ typedef struct {
 
 VTileMapCSSStyle *vtile_mapcss_style_new ();
 void vtile_mapcss_style_free (VTileMapCSSStyle *style);
-VTileMapCSSValue *vtile_mapcss_style_get (VTileMapCSSStyle *style,
-                                          const char *name);
 
+gdouble vtile_mapcss_style_get_num (VTileMapCSSStyle *style,
+                                    const char *name);
+VTileMapCSSColor *vtile_mapcss_style_get_color (VTileMapCSSStyle *style,
+                                                const char *name);
+VTileMapCSSDash *vtile_mapcss_style_get_dash (VTileMapCSSStyle *style,
+                                              const char *name);
+gint vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
+                                  const char *name);
 
 #endif /* __VECTOR_TILE_MAPCSS_STYLE_H__ */

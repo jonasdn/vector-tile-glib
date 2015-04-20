@@ -270,6 +270,109 @@ mapbox_render_geometry (MapboxFeatureData *data,
   } while(p_geom < data->feature->n_geometry);
 
   cairo_restore (cr);
+
+  if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
+    VTileMapCSSColor *color;
+
+    cairo_fill_preserve (cr);
+    color = vtile_mapcss_style_get_color (data->style, "fill-color");
+    cairo_set_source_rgb (cr,
+                          color->r,
+                          color->g,
+                          color->b);
+  }
+  cairo_stroke (cr);
+}
+
+static void
+mapbox_render_casings (MapboxFeatureData *data,
+                       cairo_t *cr,
+                       gdouble line_width,
+                       gdouble line_join,
+                       gdouble line_cap,
+                       VTileMapCSSDash *dash)
+{
+  VTileMapCSSColor *color;
+  VTileMapCSSDash *c_dash;
+  VTileMapCSSLineCap c_line_cap;
+  VTileMapCSSLineJoin c_line_join;
+  gdouble c_width;
+
+  c_width = vtile_mapcss_style_get_num (data->style, "casing-width");
+  if (!c_width)
+    return;
+
+  color = vtile_mapcss_style_get_color (data->style, "casing-color");
+  cairo_set_source_rgb (cr,
+                        color->r,
+                        color->g,
+                        color->b);
+  c_width = line_width + (2 * c_width);
+  cairo_set_line_width (cr, c_width);
+
+  c_line_cap = vtile_mapcss_style_get_enum (data->style, "casing-linecap");
+  if (c_line_cap > 0)
+    cairo_set_line_cap (cr, c_line_cap);
+  else
+    cairo_set_line_cap (cr, line_cap);
+
+  c_line_join  = vtile_mapcss_style_get_enum (data->style, "casing-linecap");
+  if (c_line_join > 0)
+    cairo_set_line_cap (cr, c_line_join);
+  else
+    cairo_set_line_cap (cr, line_join);
+
+  c_dash = vtile_mapcss_style_get_dash (data->style, "casing-dashes");
+  if (c_dash)
+    cairo_set_dash (cr, c_dash->dashes, c_dash->num_dashes, 0);
+  else
+    cairo_set_dash (cr, dash->dashes, dash->num_dashes, 0);
+
+  mapbox_render_geometry (data, cr);
+}
+
+static void
+mapbox_render_lines (MapboxFeatureData *data,
+                     cairo_t *cr)
+{
+  VTileMapCSSColor *color;
+  VTileMapCSSDash *dash;
+  VTileMapCSSLineCap line_cap;
+  VTileMapCSSLineJoin line_join;
+  gdouble line_width;
+
+  line_width = vtile_mapcss_style_get_num (data->style, "width");
+  dash = vtile_mapcss_style_get_dash (data->style, "dashes");
+  line_cap = vtile_mapcss_style_get_enum (data->style, "linecap");
+  line_join = vtile_mapcss_style_get_enum (data->style, "linejoin");
+
+  mapbox_render_casings (data, cr, line_width, line_join, line_cap, dash);
+
+  color = vtile_mapcss_style_get_color (data->style, "color");
+  cairo_set_source_rgb (cr,
+                        color->r,
+                        color->g,
+                        color->b);
+
+  cairo_set_line_width (cr, line_width);
+  cairo_set_line_cap (cr, line_cap);
+  cairo_set_line_cap (cr, line_join);
+  cairo_set_dash (cr, dash->dashes, dash->num_dashes, 0);
+
+  mapbox_render_geometry (data, cr);
+}
+
+static void
+mapbox_render_feature (MapboxFeatureData *data,
+                       cairo_t *cr)
+{
+  if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON ||
+      data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
+    mapbox_render_lines (data, cr);
+  }
+
+  vtile_mapcss_style_free (data->style);
+  g_free (data);
 }
 
 static void
@@ -280,17 +383,14 @@ mapbox_process_feature (VTileMapbox *mapbox,
                         guint layer_index)
 {
   MapboxFeatureData *data;
-  VTileMapCSSValue *value;
   GHashTable *tags;
   char *tag_value;
-  GList *render_layer;
 
   tags = mapbox_get_tags (feature, layer, primary_tag);
 
   data = g_new (MapboxFeatureData, 1);
   data->style = mapbox_feature_get_style (mapbox, tags, feature, layer);
-  value = vtile_mapcss_style_get (data->style, "z-index");
-  data->z_index = value->num;
+  data->z_index = vtile_mapcss_style_get_num (data->style, "z-index");
   data->extent = layer->extent;
   data->tile_size = mapbox->priv->tile_size;
   data->feature = feature;
@@ -312,104 +412,20 @@ mapbox_process_feature (VTileMapbox *mapbox,
 }
 
 static void
-mapbox_render_feature (MapboxFeatureData *data,
-                       cairo_t *cr)
-{
-  VTileMapCSSValue *value;
-  gdouble line_width;
-
-  /* Get line width */
-  value = vtile_mapcss_style_get (data->style, "width");
-  line_width = value->num;
-
-  value = vtile_mapcss_style_get (data->style, "casing-width");
-  if (value->num > 0 &&
-      data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING && value->num > 0) {
-
-    /* Set casing color */
-    value = vtile_mapcss_style_get (data->style, "casing-color");
-    cairo_set_source_rgb (cr,
-                          value->color.r,
-                          value->color.g,
-                          value->color.b);
-
-    /* Set casing width */
-    value = vtile_mapcss_style_get (data->style, "casing-width");
-    cairo_set_line_width (cr, line_width + (2 * value->num));
-
-    /* Set linecap */
-    value = vtile_mapcss_style_get (data->style, "linecap");
-    cairo_set_line_cap (cr, value->line_cap);
-   /* Set linejoin */
-    value = vtile_mapcss_style_get (data->style, "linejoin");
-    cairo_set_line_cap (cr, value->line_join);
-
-    /* Set dashes */
-    value = vtile_mapcss_style_get (data->style, "dashes");
-    cairo_set_dash (cr, value->dash.dashes, value->dash.num_dashes, 0);
-
-
-    mapbox_render_geometry (data, cr);
-    cairo_stroke (cr);
-  }
-
-  /* Set line color */
-  value = vtile_mapcss_style_get (data->style, "color");
-  cairo_set_source_rgb (cr,
-                        value->color.r,
-                        value->color.g,
-                        value->color.b);
-
-  /* Set line width */
-  value = vtile_mapcss_style_get (data->style, "width");
-  cairo_set_line_width (cr, value->num);
-
-  /* Set linecap */
-  value = vtile_mapcss_style_get (data->style, "linecap");
-  cairo_set_line_cap (cr, value->line_cap);
-
-  /* Set linejoin */
-  value = vtile_mapcss_style_get (data->style, "linejoin");
-  cairo_set_line_cap (cr, value->line_join);
-
-  /* Set dashes */
-  value = vtile_mapcss_style_get (data->style, "dashes");
-
-  mapbox_render_geometry (data, cr);
-
-  if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
-    cairo_stroke_preserve (cr);
-
-    /* Set the fill color */
-    value = vtile_mapcss_style_get (data->style, "fill-color");
-    cairo_set_source_rgb (cr,
-                          value->color.r,
-                          value->color.g,
-                          value->color.b);
-    cairo_fill (cr);
-  } else {
-    cairo_stroke (cr);
-  }
-
-  vtile_mapcss_style_free (data->style);
-  g_free (data);
-}
-
-static void
 mapbox_set_canvas_style (VTileMapbox *mapbox,
                          cairo_t *cr)
 {
   VTileMapCSSStyle *style;
-  VTileMapCSSValue *value;
+  VTileMapCSSColor *color;
 
   style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "canvas",
                                   NULL, mapbox->priv->zoom_level);
 
-  value = vtile_mapcss_style_get (style, "fill-color");
+  color = vtile_mapcss_style_get_color (style, "fill-color");
   cairo_set_source_rgb (cr,
-                        value->color.r,
-                        value->color.g,
-                        value->color.b);
+                        color->r,
+                        color->g,
+                        color->b);
   vtile_mapcss_style_free (style);
 
   cairo_rectangle (cr, 0, 0,
@@ -499,7 +515,6 @@ vtile_mapbox_render (VTileMapbox *mapbox, cairo_t *cr,
                      GError **error)
 {
   VectorTile__Tile *tile;
-  gint n;
   gboolean status;
 
   g_return_val_if_fail (mapbox != NULL, FALSE);

@@ -29,32 +29,32 @@ test_selector (void)
 {
   char *filename = "selector.mapcss";
   VTileMapCSSStyle *style;
-  VTileMapCSSValue *value;
+  gdouble num;
 
   g_assert (mapcss_new_and_load (filename));
 
   style = vtile_mapcss_get_style (stylesheet, "canvas", NULL, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 2.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 2.0);
   vtile_mapcss_style_free (style);
 
   style = vtile_mapcss_get_style (stylesheet, "way", NULL, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 3.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 3.0);
   vtile_mapcss_style_free (style);
 
   style = vtile_mapcss_get_style (stylesheet, "area", NULL, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 4.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 4.0);
   vtile_mapcss_style_free (style);
 
   style = vtile_mapcss_get_style (stylesheet, "node", NULL, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 5.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 5.0);
   vtile_mapcss_style_free (style);
 
   g_object_unref (stylesheet);
@@ -64,21 +64,21 @@ static void
 test_selector_list (void)
 {
   char *filename = "selector_list.mapcss";
-  VTileMapCSSValue *value;
+  gdouble num;
   VTileMapCSSStyle *style;
 
   g_assert (mapcss_new_and_load (filename));
 
   style = vtile_mapcss_get_style (stylesheet, "way", NULL, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 2.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 2.0);
   vtile_mapcss_style_free (style);
 
   style = vtile_mapcss_get_style (stylesheet, "area", NULL, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 2.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 2.0);
   vtile_mapcss_style_free (style);
 
   g_object_unref (stylesheet);
@@ -89,7 +89,7 @@ test_selector_test (void)
 {
   char *filename = "selector_test.mapcss";
   GHashTable *tags;
-  VTileMapCSSValue *value;
+  gdouble num;
   VTileMapCSSStyle *style;
 
   tags = g_hash_table_new (g_str_hash, g_str_equal);
@@ -101,14 +101,14 @@ test_selector_test (void)
 
   style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 4.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 4.0);
   vtile_mapcss_style_free (style);
 
   style = vtile_mapcss_get_style (stylesheet, "area", tags, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 7.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 7.0);
   vtile_mapcss_style_free (style);
 
   g_hash_table_remove_all (tags);
@@ -116,20 +116,20 @@ test_selector_test (void)
 
   style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 5.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 5.0);
   vtile_mapcss_style_free (style);
 
   style = vtile_mapcss_get_style (stylesheet, "area", tags, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 9.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 9.0);
   vtile_mapcss_style_free (style);
 
   style = vtile_mapcss_get_style (stylesheet, "way", NULL, 1);
   g_assert (style != NULL);
-  value = vtile_mapcss_style_get (style, "width");
-  g_assert_cmpfloat (value->num, ==, 1.0);
+  num = vtile_mapcss_style_get_num (style, "width");
+  g_assert_cmpfloat (num, ==, 1.0);
   vtile_mapcss_style_free (style);
 
   g_hash_table_destroy (tags);
@@ -141,7 +141,7 @@ static void
 test_selector_zoom (void)
 {
   char *filename = "selector_zoom.mapcss";
-  VTileMapCSSValue *value;
+  gdouble num;
   VTileMapCSSStyle *style;
   GHashTable *tags;
   gint i;
@@ -157,22 +157,22 @@ test_selector_zoom (void)
 
     style = vtile_mapcss_get_style (stylesheet, "way", tags, i);
     g_assert (style != NULL);
-    value = vtile_mapcss_style_get (style, "width");
+    num = vtile_mapcss_style_get_num (style, "width");
     if (i < 10)
-      g_assert_cmpfloat (value->num, ==, 4.0);
+      g_assert_cmpfloat (num, ==, 4.0);
     else if (i == 10)
-      g_assert_cmpfloat (value->num, ==, 2.0);
+      g_assert_cmpfloat (num, ==, 2.0);
     else
-      g_assert_cmpfloat (value->num, ==, 1.0);
+      g_assert_cmpfloat (num, ==, 1.0);
     vtile_mapcss_style_free (style);
 
     style = vtile_mapcss_get_style (stylesheet, "area", tags, i);
     g_assert (style != NULL);
-    value = vtile_mapcss_style_get (style, "width");
+    num = vtile_mapcss_style_get_num (style, "width");
     if (i == 5)
-      g_assert_cmpfloat (value->num, ==, 3.0);
+      g_assert_cmpfloat (num, ==, 3.0);
     else
-      g_assert_cmpfloat (value->num, ==, 1.0);
+      g_assert_cmpfloat (num, ==, 1.0);
   }
 
   g_hash_table_remove_all (tags);

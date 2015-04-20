@@ -64,10 +64,66 @@ vtile_mapcss_style_add_line_join (VTileMapCSSStyle *style,
 }
 
 
-VTileMapCSSValue *
+static VTileMapCSSValue *
 vtile_mapcss_style_get (VTileMapCSSStyle *style, const char *name)
 {
   return g_hash_table_lookup (style->properties, name);
+}
+
+gdouble
+vtile_mapcss_style_get_num (VTileMapCSSStyle *style,
+                            const char *name)
+{
+  VTileMapCSSValue *value;
+
+  value = vtile_mapcss_style_get (style, name);
+  if (value)
+    return value->num;
+
+  return -G_MAXDOUBLE;
+}
+
+VTileMapCSSColor *
+vtile_mapcss_style_get_color (VTileMapCSSStyle *style,
+                              const char *name)
+{
+  VTileMapCSSValue *value;
+
+  value = vtile_mapcss_style_get (style, name);
+  if (value)
+    return &value->color;
+
+  return NULL;
+}
+
+VTileMapCSSDash *
+vtile_mapcss_style_get_dash (VTileMapCSSStyle *style,
+                             const char *name)
+{
+  VTileMapCSSValue *value;
+
+  value = vtile_mapcss_style_get (style, name);
+  if (value)
+    return &value->dash;
+
+  return NULL;
+}
+
+gint
+vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
+                             const char *name)
+{
+  VTileMapCSSValue *value;
+
+  value = vtile_mapcss_style_get (style, name);
+  if (value) {
+    if (value->type == VTILE_MAPCSS_VALUE_TYPE_LINE_CAP)
+      return value->line_cap;
+    else if (value->type == VTILE_MAPCSS_VALUE_TYPE_LINE_JOIN)
+      return value->line_join;
+  }
+
+  return -1;
 }
 
 VTileMapCSSStyle *
