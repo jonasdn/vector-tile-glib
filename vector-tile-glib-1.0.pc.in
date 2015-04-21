@@ -1,7 +1,7 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@/lib64
-includedir=/usr/include
+includedir=@includedir@
 
 Name: vector-tile-glib
 Description: Library for rendering vector-tiles
