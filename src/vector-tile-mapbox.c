@@ -177,7 +177,7 @@ mapbox_feature_get_style (VTileMapbox *mapbox,
   switch (feature->type)
     {
     case VECTOR_TILE__TILE__GEOM_TYPE__POLYGON:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "area",
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "way",
                                       tags, mapbox->priv->zoom_level);
       break;
     case VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING:

@@ -64,15 +64,19 @@ selector_list(A) ::= selector(B) . {
 
 selector(A) ::= selector_type(B) zoom_levels(C) tag_tests(D) . {
   char *area_value = NULL;
-  if (!g_strcmp0 (B.str, "area"))
+
+  if (!g_strcmp0 (B.str, "area")) {
     area_value = g_strdup ("yes");
+  }
   else if (!g_strcmp0 (B.str, "line"))
     area_value = g_strdup ("no");
 
   if (area_value) {
     VTileMapCSSTest *test = vtile_mapcss_test_new ();
 
-    test->tag = g_strdup (B.str);
+    g_free (B.str);
+    B.str = g_strdup ("way");
+    test->tag = g_strdup ("area");
     test->operator = VTILE_MAPCSS_TEST_TAG_EQUALS;
     test->value = area_value;
     D.list = g_list_prepend (D.list, test);
