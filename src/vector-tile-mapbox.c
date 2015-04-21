@@ -53,6 +53,7 @@ typedef struct {
   VectorTile__Tile__Feature *feature;
   VTileMapCSSStyle *style;
   MapboxLayerData *layer_data;
+  GHashTable *tags;
 
   guint z_index;
   guint extent;
@@ -225,12 +226,11 @@ mapbox_feature_get_style (VTileMapbox *mapbox,
 
   The original position is (0,0).
 */
-
 static void
-mapbox_render_geometry (MapboxFeatureData *data,
-                        cairo_t *cr)
+mapbox_draw_path (MapboxFeatureData *data,
+                  cairo_t *cr)
 {
-  gint n;
+ gint n;
   gdouble scale;
   gint p_geom = 0;
 
@@ -276,6 +276,14 @@ mapbox_render_geometry (MapboxFeatureData *data,
   } while(p_geom < data->feature->n_geometry);
 
   cairo_restore (cr);
+}
+
+
+static void
+mapbox_render_geometry (MapboxFeatureData *data,
+                        cairo_t *cr)
+{
+  mapbox_draw_path (data, cr);
 
   if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
     VTileMapCSSColor *color;
@@ -297,6 +305,21 @@ mapbox_render_geometry (MapboxFeatureData *data,
   } else {
     cairo_stroke (cr);
   }
+}
+
+static void
+mapbox_render_point (MapboxFeatureData *data,
+                     cairo_t *cr,
+                     char *text)
+{
+  VTileMapCSSColor *color;
+  gdouble opacity;
+
+  mapbox_draw_path (data, cr);
+  color = vtile_mapcss_style_get_color (data->style, "text-color");
+  opacity = vtile_mapcss_style_get_num (data->style, "text-opacity");
+  cairo_set_source_rgba (cr, color->r, color->b, color->g, opacity);
+  cairo_show_text (cr, text);
 }
 
 static void
@@ -390,9 +413,17 @@ mapbox_render_feature (MapboxFeatureData *data,
   if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON ||
       data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
     mapbox_render_lines (data, cr);
+  } else {
+    char *text_tag = vtile_mapcss_style_get_str (data->style, "text");
+    char *text;
+
+    if (text_tag && (text = g_hash_table_lookup (data->tags, text_tag))) {
+      mapbox_render_point (data, cr, text);
+    }
   }
 
   vtile_mapcss_style_free (data->style);
+  g_hash_table_destroy (data->tags);
   g_free (data);
 }
 
@@ -425,6 +456,7 @@ mapbox_process_feature (VTileMapbox *mapbox,
   data->extent = layer->extent;
   data->tile_size = mapbox->priv->tile_size;
   data->feature = feature;
+  data->tags = tags;
 
   if (layer_index == MAPBOX_RENDER_LAYER_ROADS) {
     if (mapbox_move_feature_if (tags, "is_tunnel", "yes"))
@@ -442,7 +474,6 @@ mapbox_process_feature (VTileMapbox *mapbox,
 
   mapbox->priv->render_layers[layer_index] =
     g_list_prepend (mapbox->priv->render_layers[layer_index], data);
-  g_hash_table_destroy (tags);
 }
 
 static void
@@ -456,7 +487,8 @@ mapbox_set_canvas_style (VTileMapbox *mapbox,
   style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "canvas",
                                   NULL, mapbox->priv->zoom_level);
 
-  color = vtile_mapcss_style_get_color (style, "fill-opacity");
+  opacity = vtile_mapcss_style_get_num (style, "fill-opacity");
+  g_print ("opacity: %f\n", opacity);
   color = vtile_mapcss_style_get_color (style, "fill-color");
   cairo_set_source_rgba (cr,
                          color->r,

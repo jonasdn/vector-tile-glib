@@ -93,4 +93,7 @@ VTileMapCSSDash *vtile_mapcss_style_get_dash (VTileMapCSSStyle *style,
 gint vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
                                   const char *name);
 
+char *vtile_mapcss_style_get_str (VTileMapCSSStyle *style,
+                                  const char *name);
+
 #endif /* __VECTOR_TILE_MAPCSS_STYLE_H__ */

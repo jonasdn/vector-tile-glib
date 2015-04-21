@@ -177,6 +177,12 @@ property(A) ::= IDENT(B) . {
   A.str = B.str;
 }
 
+value(A) ::= IDENT(B) . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->str = B.str;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_STRING;
+}
+
 value(A) ::= NUM(B) . {
   A.value = B.value;
 }

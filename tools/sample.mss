@@ -2,6 +2,10 @@ canvas {
     fill-color: #FAEBD7;
 }
 
+node {
+    text: name;
+}
+
 way {
     color: #777777;
     width: 1;

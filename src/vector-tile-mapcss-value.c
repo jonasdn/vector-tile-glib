@@ -18,8 +18,8 @@ vtile_mapcss_value_copy (VTileMapCSSValue *src)
   VTileMapCSSValue *dest = g_new0 (VTileMapCSSValue, 1);
 
   memcpy (dest, src, sizeof (VTileMapCSSValue));
-  if (src->str)
-    dest->str = src->str;
+  if (src->type == VTILE_MAPCSS_VALUE_TYPE_STRING)
+    dest->str = g_strdup (src->str);
 
 
   return dest;

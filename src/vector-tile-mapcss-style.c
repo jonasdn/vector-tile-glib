@@ -51,6 +51,18 @@ vtile_mapcss_style_add_enum (VTileMapCSSStyle *style,
   g_hash_table_insert (style->properties, g_strdup (name), value);
 }
 
+static void
+vtile_mapcss_style_add_str (VTileMapCSSStyle *style,
+                            const char *name,
+                            char *str)
+{
+  VTileMapCSSValue *value = vtile_mapcss_value_new ();
+
+  value->type = VTILE_MAPCSS_VALUE_TYPE_STRING;
+  value->str = g_strdup (str);
+  g_hash_table_insert (style->properties, g_strdup (name), value);
+}
+
 static VTileMapCSSValue *
 vtile_mapcss_style_get (VTileMapCSSStyle *style, const char *name)
 {
@@ -109,6 +121,20 @@ vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
   return -1;
 }
 
+char *
+vtile_mapcss_style_get_str (VTileMapCSSStyle *style,
+                            const char *name)
+{
+  VTileMapCSSValue *value;
+
+  value = vtile_mapcss_style_get (style, name);
+  if (value)
+      return value->str;
+
+  return NULL;
+
+}
+
 VTileMapCSSStyle *
 vtile_mapcss_style_new ()
 {
@@ -154,6 +180,36 @@ vtile_mapcss_style_new ()
 
   vtile_mapcss_style_add_enum (style, "linejoin",
                                VTILE_MAPCSS_LINE_JOIN_ROUND);
+
+  vtile_mapcss_style_add_str (style, "font-family", "DejaVu");
+  vtile_mapcss_style_add_num (style, "font-size", 12);
+  vtile_mapcss_style_add_enum (style, "font-weight",
+                               VTILE_MAPCSS_FONT_WEIGHT_NORMAL);
+  vtile_mapcss_style_add_enum (style, "font-style",
+                               VTILE_MAPCSS_FONT_STYLE_NORMAL);
+  vtile_mapcss_style_add_enum (style, "font-variant",
+                               VTILE_MAPCSS_FONT_VARIANT_NORMAL);
+  vtile_mapcss_style_add_enum (style, "text-decoration",
+                               VTILE_MAPCSS_TEXT_DECORATION_NONE);
+  vtile_mapcss_style_add_enum (style, "text-transform",
+                               VTILE_MAPCSS_TEXT_TRANSFORM_NONE);
+  vtile_mapcss_style_add_enum (style, "text-position",
+                               VTILE_MAPCSS_TEXT_POSITION_CENTER);
+  vtile_mapcss_style_add_color (style, "text-color",
+                                (VTileMapCSSColor) {
+                                  .r = 0.0,
+                                  .g = 0.0,
+                                  .b = 0.0
+                                });
+  vtile_mapcss_style_add_color (style, "text-halo-color",
+                                (VTileMapCSSColor) {
+                                  .r = 0.0,
+                                  .g = 0.0,
+                                  .b = 0.0
+                                });
+  vtile_mapcss_style_add_num (style, "text-opacity", 1.0);
+  vtile_mapcss_style_add_num (style, "text-offset", 0.0);
+  vtile_mapcss_style_add_num (style, "text-halo-radius", 0.0);
 
   return style;
 }
