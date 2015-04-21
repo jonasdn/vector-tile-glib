@@ -23,6 +23,7 @@
 #include "vector-tile-mapcss.h"
 #include "vector-tile-mapcss-selector.h"
 #include "vector-tile-mapcss-declaration.h"
+#include "vector-tile-mapcss-style.h"
 
 typedef enum {
   VTILE_MAPCSS_TEST_TAG_IS_SET,
@@ -68,14 +69,14 @@ VTileMapCSSStyle *vtile_mapcss_get_style (VTileMapCSS *mapcss,
                                           guint zoom);
 
 gboolean
-vector_tile_mapcss_add_selector (VTileMapCSS *mapcss,
-                                 VTileMapCSSSelector *selector);
+vile_mapcss_add_selector (VTileMapCSS *mapcss,
+                          VTileMapCSSSelector *selector);
 
 void
-vector_tile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
-                                     char *valid_tokens);
+vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
+                               char *valid_tokens);
 void
-vector_tile_mapcss_set_type_error (VTileMapCSS *mapcss);
+vtile_mapcss_set_type_error (VTileMapCSS *mapcss);
 
 
 VTileMapCSSTest *vtile_mapcss_test_new ();
