@@ -25,9 +25,9 @@
     a = yy_find_shift_action(yypParser, (YYCODETYPE)i);
     if (a < YYNSTATE + YYNRULE) {
       if (string->len == 0)
-	g_string_append (string, yyTokenName[i]);
+        g_string_append (string, yyTokenName[i]);
       else
-	g_string_append_printf (string, ", %s", yyTokenName[i]);
+        g_string_append_printf (string, ", %s", yyTokenName[i]);
     }
   }
 
@@ -44,11 +44,11 @@ rule ::= selector_list(A) LBRACE declaration_list(B) RBRACE . {
   for (l = A.list; l != NULL; l = l->next) {
     VTileMapCSSSelector *selector = (VTileMapCSSSelector *) l->data;
 
-    vtile_mapcss_selector_add_declarations (selector, B.list);
+    vtile_mapcss_selector_add_declarations (selector, B.table);
     vtile_mapcss_add_selector (parser, selector);
   }
 
-  g_list_free_full (B.list, g_object_unref);
+  g_hash_table_unref (B.table);
   g_list_free (A.list);
 }
 
@@ -156,19 +156,23 @@ selector_type(A) ::= SELECTOR_NAME(B) . {
 }
 
 declaration_list(A) ::= declaration_list(B) declaration(C) . {
-  A.list = B.list;
-  A.list = g_list_append (A.list, C.declaration);
+  A.table = B.table;
+  g_hash_table_insert (A.table, C.str, C.value);
 }
 
 declaration_list(A) ::= declaration(B) . {
-  A.list = NULL;
-  A.list = g_list_append (A.list, B.declaration);
+  A.table = g_hash_table_new_full (g_str_hash,
+                                   g_str_equal,
+                                   g_free,
+                                   (GDestroyNotify) vtile_mapcss_value_free);
+  g_hash_table_insert (A.table, B.str, B.value);
 }
 
 declaration_list ::= .
 
 declaration(A) ::= property(B) COLON value(C) SEMICOLON . {
-  A.declaration = vtile_mapcss_declaration_new (B.str, C.value);
+  A.str = B.str;
+  A.value = C.value;
 }
 
 declaration ::= .
@@ -355,7 +359,7 @@ num_list(A) ::= num_list(B) COMMA NUM(C) . {
   A.value = B.value;
   A.value->dash.dashes[A.value->dash.num_dashes] = C.value->num;
   A.value->dash.num_dashes++;
-
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_DASH;
   vtile_mapcss_value_free (C.value);
 }
 

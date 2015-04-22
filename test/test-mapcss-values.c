@@ -38,13 +38,14 @@ test_merge (void)
 
   g_assert_cmpint (vtile_mapcss_get_num_styles (stylesheet), ==, 5);
 
-  style = vtile_mapcss_get_style (stylesheet, "area", NULL, 1);
+  tags = g_hash_table_new (g_str_hash, g_str_equal);
+  g_hash_table_insert (tags, "area", "yes");
+  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 5.0);
   vtile_mapcss_style_free (style);
 
-  tags = g_hash_table_new (g_str_hash, g_str_equal);
   g_hash_table_insert (tags, "highway", "primary");
 
   style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);

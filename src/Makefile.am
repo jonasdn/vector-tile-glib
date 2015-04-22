@@ -13,7 +13,6 @@ libvector_tile_glib_la_SOURCES =					\
 	vector-tile-mapbox.c						\
 	vector-tile-mapcss.c						\
 	vector-tile-mapcss-selector.c					\
-	vector-tile-mapcss-declaration.c				\
 	vector-tile-mapcss-value.c					\
 	vector-tile-mapcss-test.c					\
 	vector-tile-mapcss-flex.c					\
@@ -71,9 +70,12 @@ VectorTileGlib_0_1_gir_INCLUDES =					\
 	cairo-1.0
 VectorTileGlib_0_1_gir_FILES =						\
 	vector-tile-mapcss.c						\
+	vector-tile-mapcss-value.c					\
+	vector-tile-mapcss-style.c					\
 	vector-tile-mapbox.c						\
 	vector-tile-mapbox.h						\
 	vector-tile-mapcss.h						\
+	vector-tile-mapcss-style.h					\
 	vector-tile-mapcss-private.h
 VectorTileGlib_0_1_gir_CFLAGS =						\
 	$(VECTOR_TILE_CFLAGS)						\

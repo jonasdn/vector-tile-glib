@@ -38,7 +38,8 @@ vtile_mapcss_selector_finalize (GObject *vselector)
     g_list_free_full (selector->priv->tests,
                       (GDestroyNotify) vtile_mapcss_test_free);
 
-  g_hash_table_destroy (selector->priv->declarations);
+  if (selector->priv->declarations)
+    g_hash_table_unref (selector->priv->declarations);
 
   if (selector->priv->zoom_levels)
     g_free (selector->priv->zoom_levels);
@@ -60,10 +61,7 @@ static void
 vtile_mapcss_selector_init (VTileMapCSSSelector *selector)
 {
   selector->priv = vtile_mapcss_selector_get_instance_private (selector);
-  selector->priv->declarations = g_hash_table_new_full (g_str_hash,
-                                                        g_str_equal,
-                                                        g_free,
-                                                        (GDestroyNotify) vtile_mapcss_value_free);
+  selector->priv->declarations = NULL;
   selector->priv->zoom_levels = NULL;
 }
 
@@ -158,17 +156,11 @@ vtile_mapcss_selector_merge (VTileMapCSSSelector *a,
 
 void
 vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
-                                        GList *declarations)
+                                        GHashTable *declarations)
 {
   GList *l = NULL;
 
-  for (l = declarations; l != NULL; l = l->next) {
-    VTileMapCSSDeclaration *declaration = (VTileMapCSSDeclaration *) l->data;
-
-    g_hash_table_insert (selector->priv->declarations,
-                         g_strdup (vtile_mapcss_declaration_get_property (declaration)),
-                         vtile_mapcss_value_copy (vtile_mapcss_declaration_get_value (declaration)));
-  }
+  selector->priv->declarations = g_hash_table_ref (declarations);
 }
 
 GHashTable *

@@ -22,7 +22,6 @@
 
 #include "vector-tile-mapcss.h"
 #include "vector-tile-mapcss-selector.h"
-#include "vector-tile-mapcss-declaration.h"
 #include "vector-tile-mapcss-style.h"
 
 typedef enum {
@@ -44,8 +43,8 @@ typedef struct {
   char *str;
   guint *range;
   GList *list;
+  GHashTable *table;
   VTileMapCSSSelector *selector;
-  VTileMapCSSDeclaration *declaration;
   VTileMapCSSTest *test;
   VTileMapCSSValue *value;
 } VTileMapCSSToken;
@@ -81,9 +80,6 @@ vtile_mapcss_set_type_error (VTileMapCSS *mapcss);
 
 VTileMapCSSTest *vtile_mapcss_test_new ();
 void vtile_mapcss_test_free (VTileMapCSSTest *test);
-
-VTileMapCSSDeclaration *vtile_mapcss_declaration_new ();
-void vtile_mapcss_declaration_free (VTileMapCSSDeclaration *declaration);
 
 VTileMapCSSValue *vtile_mapcss_value_new ();
 VTileMapCSSValue *vtile_mapcss_value_copy (VTileMapCSSValue *value);
