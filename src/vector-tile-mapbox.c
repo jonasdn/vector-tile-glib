@@ -367,7 +367,7 @@ mapbox_render_casings (MapboxFeatureData *data,
   if (c_dash)
     cairo_set_dash (cr, c_dash->dashes, c_dash->num_dashes, 0);
   else
-    cairo_set_dash (cr, dash->dashes, dash->num_dashes, 0);
+    cairo_set_dash (cr, NULL, 0, 0);
 
   mapbox_render_geometry (data, cr);
 }
