@@ -8,7 +8,8 @@ AC_CONFIG_MACRO_DIR([m4])
 PKG_CHECK_MODULES(VECTOR_TILE,
 	gio-2.0 >= 2.42.1
 	libprotobuf-c >= 1.0.1
-	cairo >= 1.4)
+	cairo >= 1.4
+        pangocairo)
 
 PKG_CHECK_MODULES([GEOCODE_GLIB], [geocode-glib-1.0],
    found_geocode=yes, found_geocode=no)

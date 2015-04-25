@@ -19,6 +19,7 @@
 #define __VECTOR_TILE_MAPBOX_H__
 
 #include <cairo.h>
+#include <pango/pango.h>
 
 #include "vector-tile-mapcss.h"
 
@@ -48,6 +49,14 @@ struct _VTileMapboxClass {
   GObjectClass parent_class;
 };
 
+typedef struct {
+  gint offset_x;
+  gint offset_y;
+  gint width;
+  gint height;
+  cairo_surface_t *surface;
+} VTileMapboxText;
+
 VTileMapbox *vtile_mapbox_new (guint8 *data,
                                gssize length,
                                guint tile_size,
@@ -68,6 +77,8 @@ void vtile_mapbox_render_async (VTileMapbox *mapbox,
 gboolean vtile_mapbox_render_finish (VTileMapbox *mapbox,
                                      GAsyncResult *result,
                                      GError **error);
+
+GList *vtile_mapbox_get_texts (VTileMapbox *mapbox);
 
 
 G_END_DECLS
