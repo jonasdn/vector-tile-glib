@@ -160,7 +160,8 @@ vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
 {
   GList *l = NULL;
 
-  selector->priv->declarations = g_hash_table_ref (declarations);
+  if (declarations)
+    selector->priv->declarations = g_hash_table_ref (declarations);
 }
 
 GHashTable *

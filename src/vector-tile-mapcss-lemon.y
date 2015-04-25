@@ -48,7 +48,8 @@ rule ::= selector_list(A) LBRACE declaration_list(B) RBRACE . {
     vtile_mapcss_add_selector (parser, selector);
   }
 
-  g_hash_table_unref (B.table);
+  if (B.table)
+    g_hash_table_unref (B.table);
   g_list_free (A.list);
 }
 
