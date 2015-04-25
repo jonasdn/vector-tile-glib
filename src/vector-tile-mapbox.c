@@ -97,7 +97,7 @@ VTileMapbox *
 vtile_mapbox_new (guint8 *data,
                   gssize size,
                   guint tile_size,
-                  guint zom_level)
+                  guint zoom_level)
 {
   VTileMapbox *mapbox;
 
@@ -106,7 +106,7 @@ vtile_mapbox_new (guint8 *data,
   mapbox->priv->data = data;
   mapbox->priv->size = size;
   mapbox->priv->tile_size = tile_size;
-  mapbox->priv->zoom_level;
+  mapbox->priv->zoom_level = zoom_level;
 
   return mapbox;
 }
