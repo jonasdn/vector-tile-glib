@@ -55,6 +55,7 @@ typedef struct {
   gint width;
   gint height;
   cairo_surface_t *surface;
+  char *uid;
 } VTileMapboxText;
 
 VTileMapbox *vtile_mapbox_new (guint8 *data,

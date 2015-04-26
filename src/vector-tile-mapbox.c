@@ -78,9 +78,19 @@ struct _VTileMapboxPrivate {
 G_DEFINE_TYPE_WITH_PRIVATE (VTileMapbox, vtile_mapbox, G_TYPE_OBJECT)
 
 static void
-vtile_mapbox_finalize (GObject *vmapbox)
+free_mapbox_text (VTileMapboxText *text) {
+  cairo_surface_destroy (text->surface);
+  g_free (text->uid);
+  g_free (text);
+}
+
+static void
+vtile_mapbox_finalize (GObject *object)
 {
-  G_OBJECT_CLASS (vtile_mapbox_parent_class)->finalize (vmapbox);
+  VTileMapbox *mapbox = (VTileMapbox *) object;
+
+  g_list_free_full (mapbox->priv->texts, (GDestroyNotify) free_mapbox_text);
+  G_OBJECT_CLASS (vtile_mapbox_parent_class)->finalize (object);
 }
 
 static void
@@ -232,18 +242,11 @@ mapbox_feature_get_style (VTileMapbox *mapbox,
   The original position is (0,0).
 */
 static void
-mapbox_draw_path (MapboxFeatureData *data,
-                  cairo_t *cr,
-                  gint *x,
-                  gint *y)
+mapbox_draw_path (MapboxFeatureData *data, cairo_t *cr)
 {
  gint n;
   gdouble scale;
   gint p_geom = 0;
-
-
-  if (x && y)
-    *x = *y = 0;
 
   /* We need this since we are using relative move_to and line_to */
   cairo_move_to (cr, 0, 0);
@@ -273,13 +276,9 @@ mapbox_draw_path (MapboxFeatureData *data,
         parameter = data->feature->geometry[++p_geom];
         dy = ZIGZAG_DECODE (parameter);
 
-        if (cmd == MAPBOX_CMD_MOVE_TO) {
+        if (cmd == MAPBOX_CMD_MOVE_TO)
           cairo_rel_move_to (cr, dx, dy);
-          if (x && y) {
-            *x += dx;
-            *y += dy;
-          }
-        } else
+        else
           cairo_rel_line_to (cr, dx, dy);
       }
     } else {
@@ -294,11 +293,14 @@ mapbox_draw_path (MapboxFeatureData *data,
 }
 
 
-static void
+static cairo_path_t *
 mapbox_render_geometry (MapboxFeatureData *data,
                         cairo_t *cr)
 {
-  mapbox_draw_path (data, cr, NULL, NULL);
+  cairo_path_t *path;
+
+  mapbox_draw_path (data, cr);
+  path = cairo_copy_path (cr);
 
   if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
     VTileMapCSSColor *color;
@@ -320,6 +322,8 @@ mapbox_render_geometry (MapboxFeatureData *data,
   } else {
     cairo_stroke (cr);
   }
+
+  return path;
 }
 
 static void
@@ -367,10 +371,10 @@ mapbox_render_casings (MapboxFeatureData *data,
   if (c_dash)
     cairo_set_dash (cr, c_dash->dashes, c_dash->num_dashes, 0);
 
-  mapbox_render_geometry (data, cr);
+  cairo_path_destroy (mapbox_render_geometry (data, cr));
 }
 
-static void
+static cairo_path_t *
 mapbox_render_lines (MapboxFeatureData *data,
                      cairo_t *cr)
 {
@@ -401,7 +405,7 @@ mapbox_render_lines (MapboxFeatureData *data,
   cairo_set_line_cap (cr, line_join);
   cairo_set_dash (cr, dash->dashes, dash->num_dashes, 0);
 
-  mapbox_render_geometry (data, cr);
+  return mapbox_render_geometry (data, cr);
 }
 
 static PangoAttrList *
@@ -441,7 +445,7 @@ mapbox_get_text_attributes (MapboxFeatureData *data)
   if (enum_value == VTILE_MAPCSS_FONT_WEIGHT_NORMAL)
     weight = PANGO_WEIGHT_NORMAL;
   else
-    style = PANGO_WEIGHT_BOLD;
+    style = PANGO_WEIGHT_HEAVY;
   pango_font_description_set_weight (desc, weight);
 
   size = vtile_mapcss_style_get_num (data->style, "font-size");
@@ -454,19 +458,67 @@ mapbox_get_text_attributes (MapboxFeatureData *data)
     pango_attr_list_insert (attr_list,
                             pango_attr_underline_new (PANGO_UNDERLINE_SINGLE));
 
-  color = vtile_mapcss_style_get_color (data->style, "text-color");
-  pango_attr_list_insert (attr_list,
-                          pango_attr_foreground_new (color->r * 65535,
-                                                     color->g * 65535,
-                                                     color->b * 65535));
   return attr_list;
 }
 
 static void
-mapbox_add_text (MapboxFeatureData *data, cairo_t *cr, char *text)
+mapbox_find_text_pos (MapboxFeatureData *data,
+                      cairo_path_t *path,
+                      guint *x_out,
+                      guint *y_out)
+{
+  cairo_path_data_t *path_data;
+  gint i;
+  gint x, y, lowest_x, lowest_y, highest_x, highest_y;
+
+  x = y = 0;
+  highest_x = highest_y = 0;
+  lowest_x = lowest_y = 4096;
+
+  for (i = 0; i < path->num_data; i += path->data[i].header.length) {
+    path_data = &path->data[i];
+
+    switch (path_data->header.type) {
+    case CAIRO_PATH_LINE_TO:
+    case CAIRO_PATH_MOVE_TO:
+      x = path_data[1].point.x;
+      y = path_data[1].point.y;
+
+      if (x <= lowest_x)
+        lowest_x = x;
+      if (x >= highest_x)
+        highest_x = x;
+      if (y <= lowest_y)
+        lowest_y = y;
+      if (x >= highest_y)
+        highest_y = y;
+
+      break;
+    }
+  }
+
+  if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
+    gint width = highest_x - lowest_x;
+    gint height = highest_y - lowest_y;
+
+    *x_out = lowest_x + (width / 2);
+    *y_out = lowest_y + (height / 2);
+  } else {
+    *x_out = x;
+    *y_out = y;
+  }
+}
+
+static void
+mapbox_add_text (MapboxFeatureData *data,
+                 cairo_t *cr,
+                 cairo_path_t *path,
+                 char *text)
 {
   PangoAttrList *attr_list;
   PangoLayout *layout;
+  VTileMapCSSColor *color;
+  gint halo_width;
   cairo_surface_t *target;
   cairo_t *text_cr;
   VTileMapboxText *m_text = g_new0 (VTileMapboxText, 1);
@@ -474,8 +526,7 @@ mapbox_add_text (MapboxFeatureData *data, cairo_t *cr, char *text)
   gint32 x;
   gint32 y;
 
-  mapbox_draw_path (data, cr, &x, &y);
-
+  mapbox_find_text_pos (data, path, &x, &y);
   attr_list = mapbox_get_text_attributes (data);
 
   layout = pango_cairo_create_layout (cr);
@@ -487,18 +538,28 @@ mapbox_add_text (MapboxFeatureData *data, cairo_t *cr, char *text)
   target = cairo_get_target (cr);
   m_text->width = width;
   m_text->height = height;
-  m_text->offset_x = x * (gdouble) (256.0 / 4096.0);
-  m_text->offset_y = y * (gdouble) (256.0 / 4096.0);
+  m_text->offset_x = x - (width / 2);
+  m_text->offset_y = y;
+  m_text->uid = g_strdup (g_hash_table_lookup (data->tags, "uid"));
   m_text->surface = cairo_surface_create_similar (target,
                                                   CAIRO_CONTENT_COLOR_ALPHA,
                                                   width, height);
   text_cr = cairo_create (m_text->surface);
-  pango_cairo_show_layout (text_cr, layout);
-  cairo_surface_write_to_png (m_text->surface, g_strdup_printf ("%s.png", text));
+  pango_cairo_layout_path (text_cr, layout);
+
+  halo_width = vtile_mapcss_style_get_num (data->style, "text-halo-radius");
+  cairo_set_line_width (cr, halo_width);
+  color = vtile_mapcss_style_get_color (data->style, "text-halo-color");
+  cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
+  cairo_stroke_preserve (text_cr);
+
+  color = vtile_mapcss_style_get_color (data->style, "text-color");
+  cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
+  cairo_fill (text_cr);
+  g_object_unref (layout);
+
   data->mapbox->priv->texts = g_list_prepend (data->mapbox->priv->texts,
                                               m_text);
-
-  g_object_unref (layout);
 }
 
 
@@ -506,16 +567,25 @@ static void
 mapbox_render_feature (MapboxFeatureData *data,
                        cairo_t *cr)
 {
+  char *text_tag;
+  char *text;
+  cairo_path_t *path = NULL;
+
   if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON ||
       data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
-    mapbox_render_lines (data, cr);
+    path = mapbox_render_lines (data, cr);
   } else {
-    char *text_tag;
-    char *text;
+    mapbox_draw_path (data, cr);
+    path = cairo_copy_path (cr);
+  }
 
+  if (path) {
     text_tag = vtile_mapcss_style_get_str (data->style, "text");
-    if (text_tag && (text = g_hash_table_lookup (data->tags, text_tag)))
-      mapbox_add_text (data, cr, text);
+    if (text_tag && (text = g_hash_table_lookup (data->tags, text_tag))) {
+        mapbox_add_text (data, cr, path, text);
+    }
+
+    cairo_path_destroy (path);
   }
 
   vtile_mapcss_style_free (data->style);
