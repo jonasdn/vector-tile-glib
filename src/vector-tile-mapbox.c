@@ -560,24 +560,29 @@ mapbox_add_text (MapboxFeatureData *data,
   pango_layout_get_pixel_size (layout, &width, &height);
 
   target = cairo_get_target (cr);
+  m_text->width = width;
+  m_text->height = height;
   m_text->offset_x = x - (width / 2);;
-  m_text->offset_y = y - vtile_mapcss_style_get_num (data->style, "width");
+  m_text->offset_y = y;
   m_text->uid = g_strdup (g_hash_table_lookup (data->tags, "uid"));
   m_text->surface = cairo_surface_create_similar (target, CAIRO_CONTENT_COLOR_ALPHA,
                                                   m_text->width, m_text->height);
   text_cr = cairo_create (m_text->surface);
-  pango_cairo_update_layout (text_cr, layout);
   pango_cairo_layout_path (text_cr, layout);
 
+  color = vtile_mapcss_style_get_color (data->style, "text-color");
   halo_width = vtile_mapcss_style_get_num (data->style, "text-halo-radius");
   if (halo_width > 0) {
-    cairo_set_line_width (cr, halo_width);
-    color = vtile_mapcss_style_get_color (data->style, "text-halo-color");
-    cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
-    cairo_stroke_preserve (text_cr);
-  }
+    VTileMapCSSColor *halo_color;
 
-  color = vtile_mapcss_style_get_color (data->style, "text-color");
+    cairo_set_line_width (text_cr, halo_width);
+    halo_color = vtile_mapcss_style_get_color (data->style, "text-halo-color");
+    cairo_set_source_rgb (text_cr, halo_color->r, halo_color->g, halo_color->b);
+  } else {
+    cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
+  }
+  cairo_stroke_preserve (text_cr);
+
   cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
   cairo_fill (text_cr);
   g_object_unref (layout);

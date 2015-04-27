@@ -15,6 +15,16 @@ node|z5-10[place=sea] {
     text: name;
 }
 
+node|z5-13[place=city] {
+    font-family: cantarell;
+    font-weight: bold;
+    text-color: #000000;
+    font-size: 14;
+    text: name;
+    text-halo: 2;
+    text-halo-color: #ffffff;
+}
+
 /* This applies to the Map as a whole, renders first */
 canvas {
     fill-color: #FAEBD7;
@@ -40,6 +50,14 @@ way[highway] {
     casing-width: 1;
     width: 5;
     casing-color: #C7B8A4;
+}
+
+way|z15-19[highway=primary], way|z15-19[highway=secondary],
+way|z15-19[highway=tertiary], way|z15-19[highway=motorway],
+way|z15-19[highway=trunk], way|z17-19[highway=residential] {
+    font-size: 6;
+    font-weight: normal;
+    text: name;
 }
 
 way|z0-7[highway] {
@@ -154,12 +172,12 @@ area {
     width: 1;
 }
 
-area|z14-19 {
+area|z15-19 {
     text: name;
     text-color: #222233;
     font-size: 8;
     font-family: cantarell;
-    font-weight: bold;
+    font-weight: normal;
 }
 
 area[landuse=park], area[landuse=playground], area[landuse=pitch],

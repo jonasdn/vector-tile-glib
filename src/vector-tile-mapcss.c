@@ -213,6 +213,8 @@ vtile_mapcss_load (VTileMapCSS *mapcss, const char *filename,
   gboolean status;
   guint8 *buffer;
 
+  g_hash_table_remove_all (mapcss->priv->selectors);
+  
   file = g_file_new_for_path (filename);
   info = g_file_query_info (file,
                             G_FILE_ATTRIBUTE_STANDARD_SIZE,
