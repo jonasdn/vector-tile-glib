@@ -445,7 +445,7 @@ mapbox_get_text_attributes (MapboxFeatureData *data)
   if (enum_value == VTILE_MAPCSS_FONT_WEIGHT_NORMAL)
     weight = PANGO_WEIGHT_NORMAL;
   else
-    style = PANGO_WEIGHT_HEAVY;
+    style = PANGO_WEIGHT_BOLD;
   pango_font_description_set_weight (desc, weight);
 
   size = vtile_mapcss_style_get_num (data->style, "font-size");
@@ -465,11 +465,15 @@ static void
 mapbox_find_text_pos (MapboxFeatureData *data,
                       cairo_path_t *path,
                       guint *x_out,
-                      guint *y_out)
+                      guint *y_out,
+                      gdouble *angle)
 {
   cairo_path_data_t *path_data;
   gint i;
-  gint x, y, lowest_x, lowest_y, highest_x, highest_y;
+  gint x, y;
+  gint lowest_x, lowest_y, highest_x, highest_y;
+  gint longest_x, longest_y;
+  gint longest = 0;
 
   x = y = 0;
   highest_x = highest_y = 0;
@@ -480,18 +484,36 @@ mapbox_find_text_pos (MapboxFeatureData *data,
 
     switch (path_data->header.type) {
     case CAIRO_PATH_LINE_TO:
+      if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
+        gint d;
+
+        d = sqrt (pow (path_data[1].point.x - x, 2) +
+                  pow (path_data[1].point.y - y, 2));
+        if (d > longest) {
+          longest = d;
+
+          *x_out = x < path_data[1].point.x ? x : path_data[1].point.x;
+          *y_out = x < path_data[1].point.x ? y : path_data[1].point.y;
+          *angle = atan ((path_data[1].point.y - y) /
+                         (path_data[1].point.x -x));
+        }
+      }
+
     case CAIRO_PATH_MOVE_TO:
       x = path_data[1].point.x;
       y = path_data[1].point.y;
 
-      if (x <= lowest_x)
-        lowest_x = x;
-      if (x >= highest_x)
-        highest_x = x;
-      if (y <= lowest_y)
-        lowest_y = y;
-      if (x >= highest_y)
-        highest_y = y;
+      if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__POLYGON) {
+        if (x <= lowest_x)
+          lowest_x = x;
+        if (x >= highest_x)
+          highest_x = x;
+        if (y <= lowest_y)
+          lowest_y = y;
+        if (x >= highest_y)
+          highest_y = y;
+      }
+
 
       break;
     }
@@ -525,8 +547,9 @@ mapbox_add_text (MapboxFeatureData *data,
   gint width, height;
   gint32 x;
   gint32 y;
+  gdouble angle = 0;
 
-  mapbox_find_text_pos (data, path, &x, &y);
+  mapbox_find_text_pos (data, path, &x, &y, &angle);
   attr_list = mapbox_get_text_attributes (data);
 
   layout = pango_cairo_create_layout (cr);
@@ -536,22 +559,22 @@ mapbox_add_text (MapboxFeatureData *data,
   pango_layout_get_pixel_size (layout, &width, &height);
 
   target = cairo_get_target (cr);
-  m_text->width = width;
-  m_text->height = height;
-  m_text->offset_x = x - (width / 2);
-  m_text->offset_y = y;
+  m_text->offset_x = x - (width / 2);;
+  m_text->offset_y = y - vtile_mapcss_style_get_num (data->style, "width");
   m_text->uid = g_strdup (g_hash_table_lookup (data->tags, "uid"));
-  m_text->surface = cairo_surface_create_similar (target,
-                                                  CAIRO_CONTENT_COLOR_ALPHA,
-                                                  width, height);
+  m_text->surface = cairo_surface_create_similar (target, CAIRO_CONTENT_COLOR_ALPHA,
+                                                  m_text->width, m_text->height);
   text_cr = cairo_create (m_text->surface);
+  pango_cairo_update_layout (text_cr, layout);
   pango_cairo_layout_path (text_cr, layout);
 
   halo_width = vtile_mapcss_style_get_num (data->style, "text-halo-radius");
-  cairo_set_line_width (cr, halo_width);
-  color = vtile_mapcss_style_get_color (data->style, "text-halo-color");
-  cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
-  cairo_stroke_preserve (text_cr);
+  if (halo_width > 0) {
+    cairo_set_line_width (cr, halo_width);
+    color = vtile_mapcss_style_get_color (data->style, "text-halo-color");
+    cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
+    cairo_stroke_preserve (text_cr);
+  }
 
   color = vtile_mapcss_style_get_color (data->style, "text-color");
   cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
