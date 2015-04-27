@@ -19,6 +19,7 @@
 #include <cairo.h>
 #include <pango/pango.h>
 #include <pango/pangocairo.h>
+#include <math.h>
 
 #include "vector-tile-mapcss-private.h"
 #include "vector-tile-mapcss-style.h"
