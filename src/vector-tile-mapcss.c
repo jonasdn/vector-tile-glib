@@ -37,7 +37,7 @@ enum {
 };
 
 struct _VTileMapCSSPrivate {
-  GQueue *selectors[VTILE_MAPCSS_SELECTOR_NUM_TYPES];
+  GList *selectors[VTILE_MAPCSS_SELECTOR_NUM_TYPES];
   guint lineno;
   guint column;
   char *text;
@@ -64,7 +64,7 @@ vtile_mapcss_finalize (GObject *vmapcss)
     g_free (mapcss->priv->parse_error);
 
   for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++)
-    g_queue_free_full (mapcss->priv->selectors[i], g_object_unref);
+    g_list_free_full (mapcss->priv->selectors[i], g_object_unref);
 
   G_OBJECT_CLASS (vtile_mapcss_parent_class)->finalize (vmapcss);
 }
@@ -145,7 +145,7 @@ vtile_mapcss_init (VTileMapCSS *mapcss)
   mapcss->priv->parse_error = NULL;
 
   for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++)
-    mapcss->priv->selectors[i] = g_queue_new ();
+    mapcss->priv->selectors[i] = NULL;
 }
 
 /**
@@ -219,10 +219,11 @@ vtile_mapcss_load (VTileMapCSS *mapcss, const char *filename,
   gint i;
 
   for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++) {
-    g_queue_free_full (mapcss->priv->selectors[i], g_object_unref);
-    mapcss->priv->selectors[i] = g_queue_new ();
+    if (mapcss->priv->selectors[i]) {
+      g_list_free_full (mapcss->priv->selectors[i], g_object_unref);
+      mapcss->priv->selectors[i] = NULL;
+    }
   }
-
   
   file = g_file_new_for_path (filename);
   info = g_file_query_info (file,
@@ -271,6 +272,9 @@ vtile_mapcss_load (VTileMapCSS *mapcss, const char *filename,
   status = vtile_mapcss_parse (mapcss, buffer, size + 2, error);
   g_free (buffer);
 
+  for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++)
+    mapcss->priv->selectors[i] = g_list_reverse (mapcss->priv->selectors[i]);
+
   return status;
 }
 
@@ -300,25 +304,11 @@ void
 vtile_mapcss_add_selector (VTileMapCSS *mapcss,
                            VTileMapCSSSelector *selector)
 {
-  GQueue *selector_queue = NULL;
-  gboolean push = TRUE;
-  gint i;
   VTileMapCSSSelectorType type;
 
   type = vtile_mapcss_selector_get_selector_type (selector);
-  selector_queue = mapcss->priv->selectors[type];
-  for (i = 0; i < selector_queue->length; i++) {
-    VTileMapCSSSelector *current = g_queue_peek_nth (selector_queue, i);
-
-    if (vtile_mapcss_selector_equals (current, selector)) {
-      vtile_mapcss_selector_merge (current, selector);
-      push = FALSE;
-      break;
-    }
-  }
-
-  if (push)
-    g_queue_push_tail (selector_queue, selector);
+  mapcss->priv->selectors[type] = g_list_prepend (mapcss->priv->selectors[type],
+                                                  selector);
 }
 
 static void
@@ -404,15 +394,14 @@ vtile_mapcss_get_style (VTileMapCSS *mapcss,
                         guint zoom_level)
 {
   VTileMapCSSStyle *style;
-  GQueue *queue;
-  gint i;
+  GList *selector_list, *l = NULL;
 
   style = vtile_mapcss_style_new ();
+  selector_list = mapcss->priv->selectors[type];
+  if (selector_list) {
+    for (l = selector_list; l != NULL; l = l->next) {
+      VTileMapCSSSelector *selector = l->data;
 
-  queue = mapcss->priv->selectors[type];
-  if (queue) {
-    for (i = 0; i < queue->length; i++) {
-      VTileMapCSSSelector *selector = g_queue_peek_nth (queue, i);
       if (vtile_mapcss_match_zoom (selector, zoom_level) &&
           vtile_mapcss_match_tests (selector, tags))
         vtile_mapcss_apply_selector (selector, style);
@@ -428,8 +417,9 @@ vtile_mapcss_get_num_styles (VTileMapCSS *mapcss)
   gint i, count;
 
   for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++) {
-    GQueue *queue = mapcss->priv->selectors[i];
-    count += queue->length;
+    GList *list = mapcss->priv->selectors[i];
+
+    count += list ? g_list_length (list) : 0;
   }
 
   return count;

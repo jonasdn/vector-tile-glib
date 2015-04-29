@@ -26,43 +26,6 @@ mapcss_new_and_load (const char *filename)
 }
 
 static void
-test_merge (void)
-{
-  char *filename = "merge.mapcss";
-  GHashTable *tags;
-  VTileMapCSSStyle *style;
-  gdouble num;
-
-  g_assert (mapcss_new_and_load (filename));
-  g_assert (stylesheet != NULL);
-
-  g_assert_cmpint (vtile_mapcss_get_num_styles (stylesheet), ==, 5);
-
-  tags = g_hash_table_new (g_str_hash, g_str_equal);
-  g_hash_table_insert (tags, "area", "yes");
-  style = vtile_mapcss_get_style (stylesheet,
-                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
-                                  tags, 1);
-  g_assert (style != NULL);
-  num = vtile_mapcss_style_get_num (style, "width");
-  g_assert_cmpfloat (num, ==, 5.0);
-  vtile_mapcss_style_free (style);
-
-  g_hash_table_insert (tags, "highway", "primary");
-
-  style = vtile_mapcss_get_style (stylesheet,
-                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
-                                  tags, 1);
-  g_assert (style != NULL);
-  num = vtile_mapcss_style_get_num (style, "width");
-  g_assert_cmpfloat (num, ==, 6.0);
-  vtile_mapcss_style_free (style);
-
-  g_hash_table_destroy (tags);
-  g_object_unref (stylesheet);
-}
-
-static void
 test_values (void)
 {
   VTileMapCSSStyle *style;
@@ -117,7 +80,6 @@ main (int argc, char *argv[])
   g_test_bug_base ("http://bugzilla.gnome.org/show_bug.cgi?id=");
 
   g_test_add_func ("/test/values", test_values);
-  g_test_add_func ("/test/merge", test_merge);
 
   return g_test_run ();
 }
