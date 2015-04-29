@@ -3,9 +3,11 @@
 
 #include <glib.h>
 
-typedef struct {
+typedef struct _VTileMapCSSStyle VTileMapCSSStyle;
+
+struct _VTileMapCSSStyle {
   GHashTable *properties;
-} VTileMapCSSStyle;
+};
 
 typedef enum {
   VTILE_MAPCSS_VALUE_TYPE_COLOR,
@@ -80,6 +82,7 @@ typedef struct {
     char *str;
   };
 } VTileMapCSSValue;
+
 
 VTileMapCSSStyle *vtile_mapcss_style_new ();
 void vtile_mapcss_style_free (VTileMapCSSStyle *style);

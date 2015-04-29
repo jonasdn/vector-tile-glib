@@ -332,11 +332,8 @@ vtile_mapcss_apply_selector (VTileMapCSSSelector *selector,
   declarations = vtile_mapcss_selector_get_declarations (selector);
   g_hash_table_iter_init (&iter, declarations);
 
-  while (g_hash_table_iter_next (&iter, &key, &value)) {
-      g_hash_table_insert (style->properties,
-                           g_strdup (key),
-                           vtile_mapcss_value_copy (value));
-    }
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    g_hash_table_insert (style->properties, key, value);
 }
 
 static gboolean
