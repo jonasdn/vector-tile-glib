@@ -144,14 +144,12 @@ void
 vtile_mapcss_selector_merge (VTileMapCSSSelector *a,
                              VTileMapCSSSelector *b)
 {
-  char **keys;
-  gint n, i;
+  GHashTableIter iter;
+  gpointer key, value;
 
-  keys = (char **) g_hash_table_get_keys_as_array (b->priv->declarations, &n);
-  for (i = 0; i < n; i++) {
-    g_hash_table_insert (a->priv->declarations, keys[i],
-                         g_hash_table_lookup (b->priv->declarations, keys[i]));
-  }
+  g_hash_table_iter_init (&iter, b->priv->declarations);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    g_hash_table_insert (a->priv->declarations, key, value);
 }
 
 void

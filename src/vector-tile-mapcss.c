@@ -326,21 +326,17 @@ vtile_mapcss_apply_selector (VTileMapCSSSelector *selector,
                              VTileMapCSSStyle *style)
 {
   GHashTable *declarations;
-  char **keys;
-  gint n, i;
+  GHashTableIter iter;
+  gpointer key, value;
 
   declarations = vtile_mapcss_selector_get_declarations (selector);
-  keys = (char **) g_hash_table_get_keys_as_array (declarations, &n);
+  g_hash_table_iter_init (&iter, declarations);
 
-  for (i = 0; i < n; i++) {
-    char *property;
-    VTileMapCSSValue *value;
-
-    property = g_strdup (keys[i]);
-    value = vtile_mapcss_value_copy (g_hash_table_lookup (declarations, keys[i]));
-    g_hash_table_insert (style->properties, property, value);
-  }
-  g_free (keys);
+  while (g_hash_table_iter_next (&iter, &key, &value)) {
+      g_hash_table_insert (style->properties,
+                           g_strdup (key),
+                           vtile_mapcss_value_copy (value));
+    }
 }
 
 static gboolean
