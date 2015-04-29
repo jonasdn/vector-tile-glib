@@ -40,7 +40,9 @@ test_merge (void)
 
   tags = g_hash_table_new (g_str_hash, g_str_equal);
   g_hash_table_insert (tags, "area", "yes");
-  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 5.0);
@@ -48,7 +50,9 @@ test_merge (void)
 
   g_hash_table_insert (tags, "highway", "primary");
 
-  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 6.0);
@@ -71,7 +75,9 @@ test_values (void)
   g_assert (mapcss_new_and_load (filename));
   g_assert (stylesheet != NULL);
 
-  style = vtile_mapcss_get_style (stylesheet, "way", NULL, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  NULL, 1);
   g_assert (style != NULL);
 
   num = vtile_mapcss_style_get_num (style, "casing-width");

@@ -48,13 +48,21 @@ struct _VTileMapCSSSelectorClass {
   GObjectClass parent_class;
 };
 
-VTileMapCSSSelector *vtile_mapcss_selector_new (char *name, GList *tests,
+typedef enum {
+  VTILE_MAPCSS_SELECTOR_TYPE_CANVAS,
+  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+  VTILE_MAPCSS_SELECTOR_TYPE_NODE,
+  VTILE_MAPCSS_SELECTOR_NUM_TYPES
+} VTileMapCSSSelectorType;
+
+VTileMapCSSSelector *vtile_mapcss_selector_new (VTileMapCSSSelectorType type,
+                                                GList *tests,
                                                 gint *zoom_levels);
 void vtile_mapcss_selector_add_declarations (VTileMapCSSSelector *selector,
                                              GHashTable *declarations);
 GHashTable *vtile_mapcss_selector_get_declarations (VTileMapCSSSelector *selector);
 GList *vtile_mapcss_selector_get_tests (VTileMapCSSSelector *selector);
-char *vtile_mapcss_selector_get_name (VTileMapCSSSelector *selector);
+VTileMapCSSSelectorType vtile_mapcss_selector_get_selector_type (VTileMapCSSSelector *selector);
 guint *vtile_mapcss_selector_get_zoom_levels (VTileMapCSSSelector *selector);
 gboolean vtile_mapcss_selector_equals (VTileMapCSSSelector *a,
                                        VTileMapCSSSelector *b);

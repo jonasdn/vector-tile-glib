@@ -194,19 +194,23 @@ mapbox_feature_get_style (VTileMapbox *mapbox,
   switch (feature->type)
     {
     case VECTOR_TILE__TILE__GEOM_TYPE__POLYGON:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "way",
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet,
+                                      VTILE_MAPCSS_SELECTOR_TYPE_WAY,
                                       tags, mapbox->priv->zoom_level);
       break;
     case VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "way",
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet,
+                                      VTILE_MAPCSS_SELECTOR_TYPE_WAY,
                                       tags, mapbox->priv->zoom_level);
       break;
     case VECTOR_TILE__TILE__GEOM_TYPE__POINT:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node",
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet,
+                                      VTILE_MAPCSS_SELECTOR_TYPE_NODE,
                                       tags, mapbox->priv->zoom_level);
       break;
     default:
-      style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "node",
+      style = vtile_mapcss_get_style (mapbox->priv->stylesheet,
+                                      VTILE_MAPCSS_SELECTOR_TYPE_NODE,
                                       tags, mapbox->priv->zoom_level);
       break;
     }
@@ -680,7 +684,8 @@ mapbox_set_canvas_style (VTileMapbox *mapbox,
   VTileMapCSSColor *color;
   gdouble opacity;
 
-  style = vtile_mapcss_get_style (mapbox->priv->stylesheet, "canvas",
+  style = vtile_mapcss_get_style (mapbox->priv->stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_CANVAS,
                                   NULL, mapbox->priv->zoom_level);
 
   opacity = vtile_mapcss_style_get_num (style, "fill-opacity");

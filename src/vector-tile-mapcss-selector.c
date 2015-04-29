@@ -21,7 +21,7 @@
 #include "vector-tile-mapcss-selector.h"
 
 struct _VTileMapCSSSelectorPrivate {
-  char *name;
+  VTileMapCSSSelectorType type;
   GList *tests;
   GHashTable *declarations;
   gint *zoom_levels;
@@ -44,8 +44,6 @@ vtile_mapcss_selector_finalize (GObject *vselector)
   if (selector->priv->zoom_levels)
     g_free (selector->priv->zoom_levels);
 
-  g_free (selector->priv->name);
-
   G_OBJECT_CLASS (vtile_mapcss_selector_parent_class)->finalize (vselector);
 }
 
@@ -67,14 +65,16 @@ vtile_mapcss_selector_init (VTileMapCSSSelector *selector)
 
 
 VTileMapCSSSelector *
-vtile_mapcss_selector_new (char *name, GList *tests, gint *zoom_levels)
+vtile_mapcss_selector_new (VTileMapCSSSelectorType type,
+                           GList *tests,
+                           gint *zoom_levels)
 {
   VTileMapCSSSelector *selector;
 
   selector = g_object_new (VTILE_TYPE_MAPCSS_SELECTOR, NULL);
 
   selector->priv->tests = tests;
-  selector->priv->name = name;
+  selector->priv->type = type;
   selector->priv->zoom_levels = zoom_levels;
 
   return selector;
@@ -110,7 +110,7 @@ vtile_mapcss_selector_equals (VTileMapCSSSelector *a,
 {
   GList *l = NULL;
 
-  if (g_strcmp0 (a->priv->name, b->priv->name))
+  if (a->priv->type != b->priv->type)
     return FALSE;
 
   if (a->priv->zoom_levels && b->priv->zoom_levels) {
@@ -176,10 +176,10 @@ vtile_mapcss_selector_get_tests (VTileMapCSSSelector *selector)
   return selector->priv->tests;
 }
 
-char *
-vtile_mapcss_selector_get_name (VTileMapCSSSelector *selector)
+VTileMapCSSSelectorType
+vtile_mapcss_selector_get_selector_type (VTileMapCSSSelector *selector)
 {
-  return selector->priv->name;
+  return selector->priv->type;
 }
 
 guint *

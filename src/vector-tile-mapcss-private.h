@@ -54,16 +54,8 @@ typedef struct {
 
 YYSTYPE yylval;
 
-struct _VTileMapCSSPrivate {
-  GHashTable *selectors;
-  guint lineno;
-  guint column;
-  char *text;
-  char *parse_error;
-};
-
 VTileMapCSSStyle *vtile_mapcss_get_style (VTileMapCSS *mapcss,
-                                          const char *selector_name,
+                                          VTileMapCSSSelectorType type,
                                           GHashTable *tags,
                                           guint zoom);
 

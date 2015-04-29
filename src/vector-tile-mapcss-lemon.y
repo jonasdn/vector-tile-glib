@@ -5,7 +5,39 @@
   #include "vector-tile-mapcss.h"
   #include "vector-tile-mapcss-private.h"
   #include "vector-tile-mapcss-flex.h"
-}
+
+  static VTileMapCSSSelectorType
+  get_selector_type (const char *name, GList **tests)
+  {
+    char *area_value = NULL;
+    VTileMapCSSSelectorType type;
+
+    if (!g_strcmp0 (name, "area")) {
+      VTileMapCSSTest *test = vtile_mapcss_test_new ();
+
+      type = VTILE_MAPCSS_SELECTOR_TYPE_WAY;
+      test->tag = g_strdup ("area");
+      test->operator = VTILE_MAPCSS_TEST_TAG_EQUALS;
+      test->value = g_strdup ("yes");
+      *tests = g_list_prepend (*tests, test);
+    } else if (!g_strcmp0 (name, "line")) {
+      VTileMapCSSTest *test = vtile_mapcss_test_new ();
+
+      type = VTILE_MAPCSS_SELECTOR_TYPE_WAY;
+      test->tag = g_strdup ("area");
+      test->operator = VTILE_MAPCSS_TEST_TAG_EQUALS;
+      test->value = g_strdup ("no");
+      *tests = g_list_prepend (*tests, test);
+    } else if (!g_strcmp0 (name, "way")) {
+      type = VTILE_MAPCSS_SELECTOR_TYPE_WAY;
+    } else if (!g_strcmp0 (name, "canvas")) {
+      type = VTILE_MAPCSS_SELECTOR_TYPE_CANVAS;
+    } else if (!g_strcmp0 (name, "node")) {
+      type = VTILE_MAPCSS_SELECTOR_TYPE_NODE;
+    }
+    return type;
+  }
+ }
 
 %token_type { VTileMapCSSToken }
 %default_type { VTileMapCSSToken }
@@ -64,26 +96,8 @@ selector_list(A) ::= selector(B) . {
 }
 
 selector(A) ::= selector_type(B) zoom_levels(C) tag_tests(D) . {
-  char *area_value = NULL;
-
-  if (!g_strcmp0 (B.str, "area")) {
-    area_value = g_strdup ("yes");
-  }
-  else if (!g_strcmp0 (B.str, "line"))
-    area_value = g_strdup ("no");
-
-  if (area_value) {
-    VTileMapCSSTest *test = vtile_mapcss_test_new ();
-
-    g_free (B.str);
-    B.str = g_strdup ("way");
-    test->tag = g_strdup ("area");
-    test->operator = VTILE_MAPCSS_TEST_TAG_EQUALS;
-    test->value = area_value;
-    D.list = g_list_prepend (D.list, test);
-  }
-
-  A.selector = vtile_mapcss_selector_new (B.str, D.list, C.range);
+  VTileMapCSSSelectorType type = get_selector_type (B.str, &D.list);
+  A.selector = vtile_mapcss_selector_new (type, D.list, C.range);
 }
 
 zoom_levels(A) ::= PIPE ZL(B) . {

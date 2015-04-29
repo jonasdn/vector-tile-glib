@@ -37,25 +37,33 @@ test_selector (void)
   g_hash_table_insert (tags, "area", "yes");
   g_assert (mapcss_new_and_load (filename));
 
-  style = vtile_mapcss_get_style (stylesheet, "canvas", NULL, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_CANVAS,
+                                  NULL, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 2.0);
   vtile_mapcss_style_free (style);
 
-  style = vtile_mapcss_get_style (stylesheet, "way", NULL, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  NULL, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 3.0);
   vtile_mapcss_style_free (style);
 
-  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 4.0);
   vtile_mapcss_style_free (style);
 
-  style = vtile_mapcss_get_style (stylesheet, "node", NULL, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_NODE,
+                                  NULL, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 5.0);
@@ -77,13 +85,17 @@ test_selector_list (void)
 
   g_assert (mapcss_new_and_load (filename));
 
-  style = vtile_mapcss_get_style (stylesheet, "way", NULL, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  NULL, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 2.0);
   vtile_mapcss_style_free (style);
 
-  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 2.0);
@@ -107,14 +119,18 @@ test_selector_test (void)
 
   g_assert (mapcss_new_and_load (filename));
 
-  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 4.0);
   vtile_mapcss_style_free (style);
 
   g_hash_table_insert (tags, "area", "yes");
-  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 7.0);
@@ -123,20 +139,26 @@ test_selector_test (void)
   g_hash_table_remove_all (tags);
   g_hash_table_insert (tags, "highway", "footway");
 
-  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 5.0);
   vtile_mapcss_style_free (style);
 
   g_hash_table_insert (tags, "area", "yes");
-  style = vtile_mapcss_get_style (stylesheet, "way", tags, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  tags, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 9.0);
   vtile_mapcss_style_free (style);
 
-  style = vtile_mapcss_get_style (stylesheet, "way", NULL, 1);
+  style = vtile_mapcss_get_style (stylesheet,
+                                  VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                  NULL, 1);
   g_assert (style != NULL);
   num = vtile_mapcss_style_get_num (style, "width");
   g_assert_cmpfloat (num, ==, 1.0);
@@ -166,7 +188,9 @@ test_selector_zoom (void)
     VTileMapCSSStyle *style;
 
     g_hash_table_insert (tags, "area", "no");
-    style = vtile_mapcss_get_style (stylesheet, "way", tags, i);
+    style = vtile_mapcss_get_style (stylesheet,
+                                    VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                    tags, i);
     g_assert (style != NULL);
     num = vtile_mapcss_style_get_num (style, "width");
     if (i < 10)
@@ -178,7 +202,9 @@ test_selector_zoom (void)
     vtile_mapcss_style_free (style);
 
     g_hash_table_insert (tags, "area", "yes");
-    style = vtile_mapcss_get_style (stylesheet, "way", tags, i);
+    style = vtile_mapcss_get_style (stylesheet,
+                                    VTILE_MAPCSS_SELECTOR_TYPE_WAY,
+                                    tags, i);
     g_assert (style != NULL);
     num = vtile_mapcss_style_get_num (style, "width");
     if (i == 5)
