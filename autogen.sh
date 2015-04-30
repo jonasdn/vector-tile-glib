@@ -6,6 +6,9 @@ test -z "$srcdir" && srcdir=.
 
 PKG_NAME="vector-tile-glib"
 
+gtkdocize || {
+    echo "No gtkdocize..."
+}
 
 which gnome-autogen.sh || {
     echo "You need to install gnome-common from the GNOME git"

@@ -20,9 +20,12 @@
 
 #include <gio/gio.h>
 
-#include "vector-tile-mapcss.h"
-
 G_BEGIN_DECLS
+
+/**
+ * SECTION: VTileMapCSSSelector (skip)
+ *
+ */
 
 GType vtile_mapcss_selector_get_type (void) G_GNUC_CONST;
 

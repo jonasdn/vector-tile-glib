@@ -20,19 +20,15 @@
 
 #include <glib.h>
 
+#include "vector-tile-mapcss-private.h"
+#include "vector-tile-boxed.h"
+G_BEGIN_DECLS
+
+
+/**
+ * VTileMapCSSStyle
+ */
 typedef struct _VTileMapCSSStyle VTileMapCSSStyle;
-
-struct _VTileMapCSSStyle {
-  GHashTable *properties;
-};
-
-typedef enum {
-  VTILE_MAPCSS_VALUE_TYPE_COLOR,
-  VTILE_MAPCSS_VALUE_TYPE_NUMBER,
-  VTILE_MAPCSS_VALUE_TYPE_STRING,
-  VTILE_MAPCSS_VALUE_TYPE_DASH,
-  VTILE_MAPCSS_VALUE_TYPE_ENUM,
-} VTileMapCSSValueType;
 
 typedef enum {
   VTILE_MAPCSS_LINE_CAP_NONE,
@@ -78,38 +74,6 @@ typedef enum {
   VTILE_MAPCSS_FONT_VARIANT_SMALL_CAPS
 } VTileMapCSSFontVariant;
 
-typedef struct {
-  gdouble r;
-  gdouble g;
-  gdouble b;
-} VTileMapCSSColor;
-
-typedef struct {
-  gdouble dashes[4];
-  gint num_dashes;
-} VTileMapCSSDash;
-
-typedef struct {
-  VTileMapCSSValueType type;
-  union {
-    VTileMapCSSColor color;
-    VTileMapCSSDash dash;
-    gint enum_value;
-    gdouble num;
-    char *str;
-  };
-} VTileMapCSSValue;
-
-
-GType vtile_mapcss_color_get_type (void);
-#define VTILE_TYPE_MAPCSS_COLOR (vtile_mapcss_color_get_type);
-
-GType vtile_mapcss_dash_get_type (void);
-#define VTILE_TYPE_MAPCSS_DASH (vtile_mapcss_dash_get_type);
-
-GType vtile_mapcss_style_get_type (void);
-#define VTILE_TYPE_MAPCSS_STYLE (vtile_mapcss_style_get_type);
-
 VTileMapCSSStyle *vtile_mapcss_style_new ();
 void vtile_mapcss_style_free (VTileMapCSSStyle *style);
 
@@ -125,4 +89,5 @@ gint vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
 char *vtile_mapcss_style_get_str (VTileMapCSSStyle *style,
                                   const char *name);
 
+G_END_DECLS
 #endif /* __VECTOR_TILE_MAPCSS_STYLE_H__ */

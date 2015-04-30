@@ -2,6 +2,7 @@
 #include <locale.h>
 
 #include "vector-tile-mapcss.h"
+#include "vector-tile-mapcss-style.h"
 #include "vector-tile-mapcss-private.h"
 
 VTileMapCSS *stylesheet;

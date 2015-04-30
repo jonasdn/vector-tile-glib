@@ -1,4 +1,4 @@
-AC_INIT([vector-tile-glib], [0.0.1],[jonas@threetimestwo.org])
+AC_INIT([vector-tile-glib], [0.1],[jonas@threetimestwo.org])
 AM_INIT_AUTOMAKE([1.9 foreign])
 
 AC_PROG_CC
@@ -38,14 +38,24 @@ fi
 
 LT_INIT([disable-static])
 
-VTILE_LT_VERSION=0:0:0
+VTILE_LT_VERSION=0:1:0
 AC_SUBST(VTILE_LT_VERSION)
+
+# check for gtk-doc
+m4_ifdef([GTK_DOC_CHECK], [
+GTK_DOC_CHECK([1.14],[--flavour no-tmpl])
+],[
+AM_CONDITIONAL([ENABLE_GTK_DOC], false)
+])
 
 AC_CONFIG_FILES([
         vector-tile-glib-1.0.pc
         Makefile
         src/Makefile
         tools/Makefile
-        test/Makefile])
+        test/Makefile
+        docs/Makefile
+        docs/reference/Makefile
+        docs/reference/version.xml])
 
 AC_OUTPUT

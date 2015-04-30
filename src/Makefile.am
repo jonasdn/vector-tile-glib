@@ -7,6 +7,7 @@ libvector_tile_glib_la_HEADERS =					\
 	vector-tile-mapbox.h						\
 	vector-tile-mapcss.h						\
 	vector-tile-mapcss-style.h					\
+	vector-tile-mapcss-value.h					\
 	vector-tile-mapcss-private.h
 
 libvector_tile_glib_la_SOURCES =					\

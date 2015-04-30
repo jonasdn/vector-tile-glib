@@ -211,13 +211,16 @@ vtile_mapcss_parse (VTileMapCSS *mapcss, guint8 *data, gssize size,
  * @filename: the path to the mapcss file to load.
  * @error: a #GError, or %NULL.
  *
+ * Parses a mapcss file and populates the @mapcss object.
+ * On error, the parse or syntax error can be found in @error.
+ *
  * Returns: %TRUE on success, %FALSE on error.
  */
 gboolean
 vtile_mapcss_load (VTileMapCSS *mapcss,
                    const char *filename,
                    GError **error)
-{
+ {
   GFile *file;
   GFileInfo *info;
   GFileInputStream *stream;
@@ -319,6 +322,7 @@ vtile_mapcss_set_type_error (VTileMapCSS *mapcss)
 
 /**
  * vtile_mapcss_add_selector: (skip)
+ * Used from the parser to add a selector to the stylesheet @mapcss
  */
 void
 vtile_mapcss_add_selector (VTileMapCSS *mapcss,
@@ -331,6 +335,10 @@ vtile_mapcss_add_selector (VTileMapCSS *mapcss,
                                                   selector);
 }
 
+/*
+ * Set the properties found in the declarations of a selector to the
+ * given style object.
+ */
 static void
 vtile_mapcss_apply_selector (VTileMapCSSSelector *selector,
                              VTileMapCSSStyle *style)
@@ -346,6 +354,11 @@ vtile_mapcss_apply_selector (VTileMapCSSSelector *selector,
     g_hash_table_insert (style->properties, key, value);
 }
 
+/*
+ * Returns true if the tests of the selector matches
+ * the given tags. Used to determine wether to apply
+ * a selector.
+ */
 static gboolean
 vtile_mapcss_match_tests (VTileMapCSSSelector *selector,
                           GHashTable *tags)
@@ -394,6 +407,11 @@ vtile_mapcss_match_tests (VTileMapCSSSelector *selector,
   return match;
 }
 
+/*
+ * Returns true if the zoom level of the selector matches
+ * the given zoom level. Used to determine wether to apply
+ * a selector.
+ */
 static gboolean
 vtile_mapcss_match_zoom (VTileMapCSSSelector *selector,
                          guint zoom_level)
@@ -413,6 +431,9 @@ vtile_mapcss_match_zoom (VTileMapCSSSelector *selector,
  * @type: The type of the selector to get style for.
  * @tags: The tags of the selector.
  * @zoom_level: The zoom_level of the tile.
+ *
+ * Get a #VTileMapCSSStyle object that represents the style
+ * for the @type with the supplied @tags at the given @zoom_level.
  *
  * Returns: a new #VTileMapCSSStyle object, free with vtile_mapcss_style_free().
  */

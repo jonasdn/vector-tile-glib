@@ -26,6 +26,16 @@
 #include "vector-tile-mapbox.h"
 #include "vector_tile.pb-c.h"
 
+/*
+ * ZigZag encoding maps signed integers to unsigned integers so that numbers
+ * with a small absolute value (for instance, -1) have a small varint encoded
+ * value too. It does this in a way that "zig-zags" back and forth through the
+ * positive and negative integers, so that -1 is encoded as 1, 1 is encoded as
+ * 2, -2 is encoded as 3, and so on.
+ *
+ * This is used by Google Protocol Buffers, used to encode mapbox vector tiles.
+ *
+ */
 #define ZIGZAG_DECODE(val) (((val) >> 1) ^ (-((val) & 1)))
 
 enum {
@@ -34,6 +44,7 @@ enum {
   MAPBOX_CMD_CLOSE_PATH = 7
 };
 
+/* This is the rendering layers and order we currently use */
 enum {
   MAPBOX_RENDER_LAYER_EARTH,
   MAPBOX_RENDER_LAYER_LANDUSE,
@@ -47,11 +58,20 @@ enum {
   NUM_RENDER_LAYERS
 };
 
+/*
+ * The index represents the order of the layer, and the primary tag
+ * tells us what key value to use for the "kind" value.
+ */
 typedef struct {
   char *primary_tag;
   guint index;
 } MapboxLayerData;
 
+
+/*
+ * This represents all we need to know to render a feature. It is collected
+ * during the first pass where we determine which layer a feature belongs to.
+ */
 typedef struct {
   VectorTile__Tile__Feature *feature;
   VTileMapCSSStyle *style;
@@ -116,7 +136,9 @@ vtile_mapbox_init (VTileMapbox *mapbox)
  * @tile_size: the size (width/height) of the tile to render.
  * @zoom_level: the zoom level of the tile.
  *
- * Returns: a new #VTileMapbox object.
+ * Create a new #VtileMapbox object, used to render a Mapbox vector tile.
+ *
+ * Returns: a new #VTileMapbox object. Use g_object_unref() when done.
  */
 VTileMapbox *
 vtile_mapbox_new (guint8 *data,
@@ -141,7 +163,8 @@ vtile_mapbox_new (guint8 *data,
  * @mapbox: a #VTileMapbox object.
  * @stylesheet: a #VTileMapCSS object.
  *
- * Set @stylesheet to the @mapbox object.
+ * Set @stylesheet to the @mapbox object. This determines how we will
+ * draw the tile.
  */
 void
 vtile_mapbox_set_stylesheet (VTileMapbox *mapbox,
@@ -150,6 +173,7 @@ vtile_mapbox_set_stylesheet (VTileMapbox *mapbox,
   mapbox->priv->stylesheet = stylesheet;
 }
 
+/* Debug function */
 static void
 mapbox_print_tags (GHashTable *tags)
 {
@@ -163,6 +187,7 @@ mapbox_print_tags (GHashTable *tags)
   g_free (keys);
 }
 
+/* Determine which tags to use from a feature */
 static GHashTable *
 mapbox_get_tags (VectorTile__Tile__Feature *feature,
                  VectorTile__Tile__Layer *layer,
@@ -274,7 +299,6 @@ mapbox_draw_path (MapboxFeatureData *data, cairo_t *cr)
   cairo_move_to (cr, 0, 0);
 
   cairo_save (cr);
-  /* layer->extent: The bounding box for the tile spans from 0..4095 units */
   scale = (gdouble) data->tile_size / data->extent;
   cairo_scale (cr, scale, scale);
 
@@ -315,6 +339,7 @@ mapbox_draw_path (MapboxFeatureData *data, cairo_t *cr)
 }
 
 
+/* Draw the geometry of a feature, this will be a line or a polygon */
 static cairo_path_t *
 mapbox_render_geometry (MapboxFeatureData *data,
                         cairo_t *cr)
@@ -348,6 +373,10 @@ mapbox_render_geometry (MapboxFeatureData *data,
   return path;
 }
 
+/* Render the casings for a line, this is done by drawing a thicker version
+ * of the line before we draw the actual line. So the width of the casing
+ * will be: line_width + (2 * casing_width).
+*/
 static void
 mapbox_render_casings (MapboxFeatureData *data,
                        cairo_t *cr,
@@ -396,6 +425,7 @@ mapbox_render_casings (MapboxFeatureData *data,
   cairo_path_destroy (mapbox_render_geometry (data, cr));
 }
 
+/* Render all lines, fetch the style data and draw the geometry */
 static cairo_path_t *
 mapbox_render_lines (MapboxFeatureData *data,
                      cairo_t *cr)

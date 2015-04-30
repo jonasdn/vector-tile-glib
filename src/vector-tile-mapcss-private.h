@@ -20,9 +20,10 @@
 
 #include <glib.h>
 
-#include "vector-tile-mapcss.h"
+#include "vector-tile-mapcss-value.h"
 #include "vector-tile-mapcss-selector.h"
-#include "vector-tile-mapcss-style.h"
+
+G_BEGIN_DECLS
 
 typedef enum {
   VTILE_MAPCSS_TEST_TAG_IS_SET,
@@ -31,12 +32,15 @@ typedef enum {
   VTILE_MAPCSS_TEST_TAG_NOT_EQUALS
 } VTileMapCSSTestOperator;
 
-  
 typedef struct {
   VTileMapCSSTestOperator operator;
   char *tag;
   char *value;
 } VTileMapCSSTest;
+
+struct _VTileMapCSSStyle {
+  GHashTable *properties;
+};
 
 #ifndef YYSTYPE
 typedef struct {
@@ -54,29 +58,11 @@ typedef struct {
 
 YYSTYPE yylval;
 
-VTileMapCSSStyle *vtile_mapcss_get_style (VTileMapCSS *mapcss,
-                                          VTileMapCSSSelectorType type,
-                                          GHashTable *tags,
-                                          guint zoom);
-
-gboolean
-vile_mapcss_add_selector (VTileMapCSS *mapcss,
-                          VTileMapCSSSelector *selector);
-
-void
-vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
-                               char *valid_tokens);
-void
-vtile_mapcss_set_type_error (VTileMapCSS *mapcss);
-
-
 VTileMapCSSTest *vtile_mapcss_test_new ();
 void vtile_mapcss_test_free (VTileMapCSSTest *test);
 
 VTileMapCSSValue *vtile_mapcss_value_new ();
 void vtile_mapcss_value_free (VTileMapCSSValue *value);
-
-gint vtile_mapcss_get_num_styles (VTileMapCSS *mapcss);
 G_END_DECLS
 
 #endif /* VECTOR_TILE_MAPCSS_PRIVATE */
