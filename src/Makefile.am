@@ -10,6 +10,7 @@ libvector_tile_glib_la_HEADERS =					\
 	vector-tile-mapcss-private.h
 
 libvector_tile_glib_la_SOURCES =					\
+	vector-tile-boxed.c						\
 	vector-tile-mapbox.c						\
 	vector-tile-mapcss.c						\
 	vector-tile-mapcss-selector.c					\
@@ -69,14 +70,14 @@ VectorTileGlib_0_1_gir_INCLUDES =					\
 	GObject-2.0							\
 	cairo-1.0
 VectorTileGlib_0_1_gir_FILES =						\
+	vector-tile-boxed.c						\
 	vector-tile-mapcss.c						\
 	vector-tile-mapcss-value.c					\
 	vector-tile-mapcss-style.c					\
 	vector-tile-mapbox.c						\
 	vector-tile-mapbox.h						\
 	vector-tile-mapcss.h						\
-	vector-tile-mapcss-style.h					\
-	vector-tile-mapcss-private.h
+	vector-tile-mapcss-style.h
 VectorTileGlib_0_1_gir_CFLAGS =						\
 	$(VECTOR_TILE_CFLAGS)						\
 	-I$(top_srcdir)							\

@@ -151,7 +151,7 @@ vtile_mapcss_init (VTileMapCSS *mapcss)
 /**
  * vtile_mapcss_new:
  *
- * Returns: a new #GeocodeForward. Use g_object_unref() when done.
+ * Returns: a new #VTileMapCSS object. Use g_object_unref() when done.
  **/
 VTileMapCSS *
 vtile_mapcss_new (void)
@@ -205,8 +205,17 @@ vtile_mapcss_parse (VTileMapCSS *mapcss, guint8 *data, gssize size,
 }
 
 
+/**
+ * vtile_mapcss_load:
+ * @mapcss: a #VTileMapCSS object.
+ * @filename: the path to the mapcss file to load.
+ * @error: a #GError, or %NULL.
+ *
+ * Returns: %TRUE on success, %FALSE on error.
+ */
 gboolean
-vtile_mapcss_load (VTileMapCSS *mapcss, const char *filename,
+vtile_mapcss_load (VTileMapCSS *mapcss,
+                   const char *filename,
                    GError **error)
 {
   GFile *file;
@@ -278,8 +287,12 @@ vtile_mapcss_load (VTileMapCSS *mapcss, const char *filename,
   return status;
 }
 
-void vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
-                                    char *valid_tokens)
+/**
+ * vtile_mapcss_set_syntax_error: (skip)
+ */
+void
+vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
+                               char *valid_tokens)
 {
   char *msg;
 
@@ -291,7 +304,11 @@ void vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
   g_free (valid_tokens);
 }
 
-void vtile_mapcss_set_type_error (VTileMapCSS *mapcss)
+/**
+ * vtile_mapcss_set_type_error: (skip)
+ */
+void
+vtile_mapcss_set_type_error (VTileMapCSS *mapcss)
 {
   char *msg;
 
@@ -300,6 +317,9 @@ void vtile_mapcss_set_type_error (VTileMapCSS *mapcss)
   mapcss->priv->parse_error = msg;
 }
 
+/**
+ * vtile_mapcss_add_selector: (skip)
+ */
 void
 vtile_mapcss_add_selector (VTileMapCSS *mapcss,
                            VTileMapCSSSelector *selector)
@@ -387,6 +407,15 @@ vtile_mapcss_match_zoom (VTileMapCSSSelector *selector,
   return zoom_level >= ranges[0] && zoom_level <= ranges[1];
 }
 
+/**
+ * vtile_mapcss_get_style:
+ * @mapcss: a #VTileMapCSS object.
+ * @type: The type of the selector to get style for.
+ * @tags: The tags of the selector.
+ * @zoom_level: The zoom_level of the tile.
+ *
+ * Returns: a new #VTileMapCSSStyle object, free with vtile_mapcss_style_free().
+ */
 VTileMapCSSStyle *
 vtile_mapcss_get_style (VTileMapCSS *mapcss,
                         VTileMapCSSSelectorType type,
@@ -409,18 +438,4 @@ vtile_mapcss_get_style (VTileMapCSS *mapcss,
   }
 
   return style;
-}
-
-gint
-vtile_mapcss_get_num_styles (VTileMapCSS *mapcss)
-{
-  gint i, count;
-
-  for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++) {
-    GList *list = mapcss->priv->selectors[i];
-
-    count += list ? g_list_length (list) : 0;
-  }
-
-  return count;
 }

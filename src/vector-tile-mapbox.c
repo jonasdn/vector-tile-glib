@@ -109,6 +109,15 @@ vtile_mapbox_init (VTileMapbox *mapbox)
   mapbox->priv->texts = NULL;
 }
 
+/**
+ * vtile_mapbox_new:
+ * @data: data of the tile to render.
+ * @gssize: the size of the @data.
+ * @tile_size: the size (width/height) of the tile to render.
+ * @zoom_level: the zoom level of the tile.
+ *
+ * Returns: a new #VTileMapbox object.
+ */
 VTileMapbox *
 vtile_mapbox_new (guint8 *data,
                   gssize size,
@@ -127,8 +136,16 @@ vtile_mapbox_new (guint8 *data,
   return mapbox;
 }
 
+/**
+ * vtile_mapbox_set_stylesheet:
+ * @mapbox: a #VTileMapbox object.
+ * @stylesheet: a #VTileMapCSS object.
+ *
+ * Set @stylesheet to the @mapbox object.
+ */
 void
-vtile_mapbox_set_stylesheet (VTileMapbox *mapbox, VTileMapCSS *stylesheet)
+vtile_mapbox_set_stylesheet (VTileMapbox *mapbox,
+                             VTileMapCSS *stylesheet)
 {
   mapbox->priv->stylesheet = stylesheet;
 }
@@ -783,8 +800,17 @@ mapbox_render_tile (VTileMapbox *mapbox,
   return TRUE;
 }
 
+/**
+ * vtile_mapbox_render:
+ * @mapbox: a #VTileMapbox object.
+ * @cr: the cairo context to render to.
+ * @error: a #GError, or %NULL.
+ *
+ * Returns: %TRUE on success, %FALSE on error.
+ */
 gboolean
-vtile_mapbox_render (VTileMapbox *mapbox, cairo_t *cr,
+vtile_mapbox_render (VTileMapbox *mapbox,
+                     cairo_t *cr,
                      GError **error)
 {
   VectorTile__Tile *tile;
@@ -823,10 +849,18 @@ vtile_mapbox_render_thread (GTask *task,
     g_task_return_error (task, error);
 }
 
-void vtile_mapbox_render_async (VTileMapbox *mapbox,
-                                cairo_t *cr,
-                                GAsyncReadyCallback callback,
-                                gpointer user_data)
+/**
+ * vtile_mapbox_render_async:
+ * @mapbox: a #VTileMapbox object.
+ * @cr: the cairo context to render to.
+ * @callback: a #GAsyncReadyCallbac to call when the request is satisfied.
+ * @user_data: the data to pass to callback function.
+ */
+void
+vtile_mapbox_render_async (VTileMapbox *mapbox,
+                           cairo_t *cr,
+                           GAsyncReadyCallback callback,
+                           gpointer user_data)
 {
   GTask *task;
 
@@ -836,6 +870,14 @@ void vtile_mapbox_render_async (VTileMapbox *mapbox,
   g_object_unref (task);
 }
 
+/**
+ * vtile_mapbox_render_finish:
+ * @mapbox: a #VTileMapbox object
+ * @result: a #GAsyncResult
+ * @error: a #GError, or %NULL
+ *
+ * Returns: %TRUE on success, %FALSE on error.
+ */
 gboolean
 vtile_mapbox_render_finish (VTileMapbox *mapbox,
                             GAsyncResult *result,
@@ -846,6 +888,9 @@ vtile_mapbox_render_finish (VTileMapbox *mapbox,
   return g_task_propagate_boolean (G_TASK (result), error);
 }
 
+/**
+ * vtile_mapbox_dump_info: (skip)
+ */
 void
 vtile_mapbox_dump_info (VTileMapbox *mapbox)
 {
@@ -903,6 +948,15 @@ vtile_mapbox_dump_info (VTileMapbox *mapbox)
   vector_tile__tile__free_unpacked (tile, NULL);
 }
 
+/**
+ * vtile_mapbox_get_texts:
+ * @mapbox: A #VTileMapbox object.
+ *
+ * Returns all labels found while rendering the tile,
+ * or %NULL if none was found.
+ *
+ * Returns: (element-type VTileMapboxText) (transfer none): List of #VTileMapboxText
+ */
 GList *
 vtile_mapbox_get_texts (VTileMapbox *mapbox)
 {
