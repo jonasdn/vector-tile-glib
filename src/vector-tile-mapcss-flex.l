@@ -52,10 +52,24 @@ zoomlevel      "z"([0-9]|[0-9]{2})
   BEGIN(INITIAL);
 }
 
-"area"|"node"|"way"|"line"|"canvas" {
-  yylval.str = g_strdup (yytext);
+"area" {
+  return AREA;
+}
 
-  return SELECTOR_NAME;
+"node" {
+  return NODE;
+}
+
+"way" {
+  return WAY;
+}
+
+"line" {
+  return LINE;
+}
+
+"canvas" {
+  return CANVAS;
 }
 
 "none" {
@@ -104,10 +118,6 @@ zoomlevel      "z"([0-9]|[0-9]{2})
 
 "capitalize" {
   return CAPITALIZE;
-}
-
-"line" {
-  return LINE;
 }
 
 "center" {

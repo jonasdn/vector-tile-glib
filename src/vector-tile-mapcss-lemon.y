@@ -7,12 +7,11 @@
   #include "vector-tile-mapcss-flex.h"
 
   static VTileMapCSSSelectorType
-  get_selector_type (const char *name, GList **tests)
+  get_selector_type (VTileMapCSSValue *value, GList **tests)
   {
-    char *area_value = NULL;
     VTileMapCSSSelectorType type;
 
-    if (!g_strcmp0 (name, "area")) {
+    if (value->enum_value == VTILE_MAPCSS_SELECTOR_TYPE_AREA) {
       VTileMapCSSTest *test = vtile_mapcss_test_new ();
 
       type = VTILE_MAPCSS_SELECTOR_TYPE_WAY;
@@ -20,7 +19,7 @@
       test->operator = VTILE_MAPCSS_TEST_TAG_EQUALS;
       test->value = g_strdup ("yes");
       *tests = g_list_prepend (*tests, test);
-    } else if (!g_strcmp0 (name, "line")) {
+    } else if (value->enum_value == VTILE_MAPCSS_SELECTOR_TYPE_LINE) {
       VTileMapCSSTest *test = vtile_mapcss_test_new ();
 
       type = VTILE_MAPCSS_SELECTOR_TYPE_WAY;
@@ -28,13 +27,10 @@
       test->operator = VTILE_MAPCSS_TEST_TAG_EQUALS;
       test->value = g_strdup ("no");
       *tests = g_list_prepend (*tests, test);
-    } else if (!g_strcmp0 (name, "way")) {
-      type = VTILE_MAPCSS_SELECTOR_TYPE_WAY;
-    } else if (!g_strcmp0 (name, "canvas")) {
-      type = VTILE_MAPCSS_SELECTOR_TYPE_CANVAS;
-    } else if (!g_strcmp0 (name, "node")) {
-      type = VTILE_MAPCSS_SELECTOR_TYPE_NODE;
+    } else {
+      type = value->enum_value;
     }
+
     return type;
   }
  }
@@ -96,8 +92,9 @@ selector_list(A) ::= selector(B) . {
 }
 
 selector(A) ::= selector_type(B) zoom_levels(C) tag_tests(D) . {
-  VTileMapCSSSelectorType type = get_selector_type (B.str, &D.list);
+  VTileMapCSSSelectorType type = get_selector_type (B.value, &D.list);
   A.selector = vtile_mapcss_selector_new (type, D.list, C.range);
+  vtile_mapcss_value_free (B.value);
 }
 
 zoom_levels(A) ::= PIPE ZL(B) . {
@@ -166,8 +163,34 @@ test(A) ::= IDENT(B) NOT EQUAL IDENT(C) . {
   A.test->operator = VTILE_MAPCSS_TEST_TAG_NOT_EQUALS;
 }
 
-selector_type(A) ::= SELECTOR_NAME(B) . {
-  A.str = B.str;
+selector_type(A) ::= AREA . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_SELECTOR_TYPE_AREA;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+selector_type(A) ::= WAY . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_SELECTOR_TYPE_WAY;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+selector_type(A) ::= CANVAS . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_SELECTOR_TYPE_CANVAS;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+selector_type(A) ::= LINE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_SELECTOR_TYPE_LINE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
+}
+
+selector_type(A) ::= NODE . {
+  A.value = vtile_mapcss_value_new ();
+  A.value->enum_value = VTILE_MAPCSS_SELECTOR_TYPE_NODE;
+  A.value->type = VTILE_MAPCSS_VALUE_TYPE_ENUM;
 }
 
 declaration_list(A) ::= declaration_list(B) declaration(C) . {
