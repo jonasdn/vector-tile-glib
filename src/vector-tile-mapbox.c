@@ -535,23 +535,8 @@ mapbox_find_text_pos (MapboxFeatureData *data,
     path_data = &path->data[i];
 
     switch (path_data->header.type) {
-    case CAIRO_PATH_LINE_TO:
-      if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
-        gint d;
-
-        d = sqrt (pow (path_data[1].point.x - x, 2) +
-                  pow (path_data[1].point.y - y, 2));
-        if (d > longest) {
-          longest = d;
-
-          *x_out = x < path_data[1].point.x ? x : path_data[1].point.x;
-          *y_out = x < path_data[1].point.x ? y : path_data[1].point.y;
-          *angle = atan ((path_data[1].point.y - y) /
-                         (path_data[1].point.x -x));
-        }
-      }
-
     case CAIRO_PATH_MOVE_TO:
+    case CAIRO_PATH_LINE_TO:
       x = path_data[1].point.x;
       y = path_data[1].point.y;
 
@@ -566,7 +551,20 @@ mapbox_find_text_pos (MapboxFeatureData *data,
           highest_y = y;
       }
 
+      if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
+        gint d;
 
+        d = sqrt (pow (path_data[1].point.x - x, 2) +
+                  pow (path_data[1].point.y - y, 2));
+        if (d > longest) {
+          longest = d;
+
+          *x_out = x < path_data[1].point.x ? x : path_data[1].point.x;
+          *y_out = x < path_data[1].point.x ? y : path_data[1].point.y;
+          *angle = atan ((path_data[1].point.y - y) /
+                         (path_data[1].point.x -x));
+        }
+      }
       break;
     }
   }
@@ -613,10 +611,11 @@ mapbox_add_text (MapboxFeatureData *data,
   target = cairo_get_target (cr);
   m_text->width = width;
   m_text->height = height;
-  m_text->offset_x = x - (width / 2);;
+  m_text->offset_x = x - (width / 2);
   m_text->offset_y = y;
   m_text->uid = g_strdup (g_hash_table_lookup (data->tags, "uid"));
-  m_text->surface = cairo_surface_create_similar (target, CAIRO_CONTENT_COLOR_ALPHA,
+  m_text->surface = cairo_surface_create_similar (target,
+                                                  CAIRO_CONTENT_COLOR_ALPHA,
                                                   m_text->width, m_text->height);
   text_cr = cairo_create (m_text->surface);
   pango_cairo_layout_path (text_cr, layout);
