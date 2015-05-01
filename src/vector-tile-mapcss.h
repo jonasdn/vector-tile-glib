@@ -56,7 +56,7 @@ gboolean vtile_mapcss_load (VTileMapCSS *mapcss,
 VTileMapCSSStyle *vtile_mapcss_get_style (VTileMapCSS *mapcss,
                                           VTileMapCSSSelectorType type,
                                           GHashTable *tags,
-                                          guint zoom);
+                                          guint zoom_level);
 gboolean vile_mapcss_add_selector (VTileMapCSS *mapcss,
                                    VTileMapCSSSelector *selector);
 void

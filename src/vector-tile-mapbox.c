@@ -132,7 +132,7 @@ vtile_mapbox_init (VTileMapbox *mapbox)
 /**
  * vtile_mapbox_new:
  * @data: data of the tile to render.
- * @gssize: the size of the @data.
+ * @size: the size of the @data.
  * @tile_size: the size (width/height) of the tile to render.
  * @zoom_level: the zoom level of the tile.
  *
