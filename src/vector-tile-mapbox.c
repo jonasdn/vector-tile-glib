@@ -75,7 +75,8 @@ typedef struct {
 typedef struct {
   VectorTile__Tile__Feature *feature;
   VTileMapCSSStyle *style;
-  MapboxLayerData *layer_data;
+  guint layer_index;
+  cairo_t *layer_cr;
   GHashTable *tags;
   VTileMapbox *mapbox;
 
@@ -83,6 +84,11 @@ typedef struct {
   guint extent;
   guint tile_size;
 } MapboxFeatureData;
+
+typedef struct {
+  GList *strokes;
+  GList *casings;
+} MapboxRenderLayer;
 
 
 struct _VTileMapboxPrivate {
@@ -92,7 +98,7 @@ struct _VTileMapboxPrivate {
   guint zoom_level;
 
   GList *texts;
-  GList *render_layers[NUM_RENDER_LAYERS];
+  MapboxRenderLayer *render_layers[NUM_RENDER_LAYERS];
   VTileMapCSS *stylesheet;
 };
 
@@ -125,8 +131,12 @@ vtile_mapbox_class_init (VTileMapboxClass *klass)
 static void
 vtile_mapbox_init (VTileMapbox *mapbox)
 {
+  gint i;
+
   mapbox->priv = vtile_mapbox_get_instance_private (mapbox);
   mapbox->priv->texts = NULL;
+  for (i = 0; i < NUM_RENDER_LAYERS; i++)
+    mapbox->priv->render_layers[i] = g_new0 (MapboxRenderLayer, 1);
 }
 
 /**
@@ -379,22 +389,23 @@ mapbox_render_geometry (MapboxFeatureData *data,
 */
 static void
 mapbox_render_casings (MapboxFeatureData *data,
-                       cairo_t *cr,
-                       gdouble line_width,
-                       gdouble line_join,
-                       gdouble line_cap,
-                       VTileMapCSSDash *dash)
+                       cairo_t *cr)
 {
   VTileMapCSSColor *color;
-  VTileMapCSSDash *c_dash;
-  VTileMapCSSLineCap c_line_cap;
-  VTileMapCSSLineJoin c_line_join;
-  gdouble c_width;
+  VTileMapCSSDash *c_dash, *dash;
+  VTileMapCSSLineCap c_line_cap, line_cap;
+  VTileMapCSSLineJoin c_line_join, line_join;
+  gdouble c_width, width;
   gdouble opacity;
 
   c_width = vtile_mapcss_style_get_num (data->style, "casing-width");
   if (!c_width)
     return;
+
+  width = vtile_mapcss_style_get_num (data->style, "width");
+  dash = vtile_mapcss_style_get_dash (data->style, "dashes");
+  line_cap = vtile_mapcss_style_get_enum (data->style, "linecap");
+  line_join = vtile_mapcss_style_get_enum (data->style, "linejoin");
 
   opacity = vtile_mapcss_style_get_num (data->style, "casing-opacity");
   color = vtile_mapcss_style_get_color (data->style, "casing-color");
@@ -403,7 +414,7 @@ mapbox_render_casings (MapboxFeatureData *data,
                         color->g,
                         color->b,
                         opacity);
-  c_width = line_width + (2 * c_width);
+  c_width = width + (2 * c_width);
   cairo_set_line_width (cr, c_width);
 
   c_line_cap = vtile_mapcss_style_get_enum (data->style, "casing-linecap");
@@ -434,15 +445,13 @@ mapbox_render_lines (MapboxFeatureData *data,
   VTileMapCSSDash *dash;
   VTileMapCSSLineCap line_cap;
   VTileMapCSSLineJoin line_join;
-  gdouble line_width, opacity;
+  gdouble opacity;
+  gdouble width;
 
-  line_width = vtile_mapcss_style_get_num (data->style, "width");
+  width = vtile_mapcss_style_get_num (data->style, "width");
   dash = vtile_mapcss_style_get_dash (data->style, "dashes");
   line_cap = vtile_mapcss_style_get_enum (data->style, "linecap");
   line_join = vtile_mapcss_style_get_enum (data->style, "linejoin");
-
-  if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING)
-    mapbox_render_casings (data, cr, line_width, line_join, line_cap, dash);
 
   opacity = vtile_mapcss_style_get_num (data->style, "opacity");
   color = vtile_mapcss_style_get_color (data->style, "color");
@@ -452,7 +461,7 @@ mapbox_render_lines (MapboxFeatureData *data,
                          color->b,
                          opacity);
 
-  cairo_set_line_width (cr, line_width);
+  cairo_set_line_width (cr, width);
   cairo_set_line_cap (cr, line_cap);
   cairo_set_line_cap (cr, line_join);
   cairo_set_dash (cr, dash->dashes, dash->num_dashes, 0);
@@ -738,6 +747,7 @@ mapbox_process_feature (VTileMapbox *mapbox,
   data = g_new (MapboxFeatureData, 1);
   data->style = mapbox_feature_get_style (mapbox, tags, feature, layer);
   data->z_index = vtile_mapcss_style_get_num (data->style, "z-index");
+  data->layer_index = layer_index;
   data->extent = layer->extent;
   data->tile_size = mapbox->priv->tile_size;
   data->feature = feature;
@@ -758,8 +768,13 @@ mapbox_process_feature (VTileMapbox *mapbox,
       layer_index = MAPBOX_RENDER_LAYER_LANDUSE_NATURE;
   }
 
-  mapbox->priv->render_layers[layer_index] =
-    g_list_prepend (mapbox->priv->render_layers[layer_index], data);
+  if (vtile_mapcss_style_get_num (data->style, "casing-width") > 0) {
+    mapbox->priv->render_layers[layer_index]->casings =
+      g_list_prepend (mapbox->priv->render_layers[layer_index]->casings, data);
+  }
+
+  mapbox->priv->render_layers[layer_index]->strokes =
+    g_list_prepend (mapbox->priv->render_layers[layer_index]->strokes, data);
 }
 
 static void
@@ -830,6 +845,33 @@ mapbox_compare_z_index (const MapboxFeatureData *a,
   return 0;
 }
 
+static void
+mapbox_render_layer (VTileMapbox *mapbox,
+                     guint layer_index,
+                     cairo_t *cr)
+{
+  MapboxRenderLayer *layer = mapbox->priv->render_layers[layer_index];
+
+  if (!layer->strokes)
+      return;
+
+    if (layer->casings) {
+      layer->casings = g_list_sort (layer->casings,
+                                    (GCompareFunc) mapbox_compare_z_index);
+
+      g_list_foreach (layer->casings, (GFunc) mapbox_render_casings, cr);
+      g_list_free (layer->casings);
+      mapbox->priv->render_layers[layer_index]->casings = NULL;
+    }
+
+    layer->strokes = g_list_sort (layer->strokes,
+                                  (GCompareFunc) mapbox_compare_z_index);
+
+    g_list_foreach (layer->strokes, (GFunc) mapbox_render_feature, cr);
+    g_list_free (layer->strokes);
+    mapbox->priv->render_layers[layer_index]->strokes = NULL;
+}
+
 static gboolean
 mapbox_render_tile (VTileMapbox *mapbox,
                     VectorTile__Tile *tile,
@@ -842,29 +884,26 @@ mapbox_render_tile (VTileMapbox *mapbox,
     char *primary_tag;
     guint layer_index;
     VectorTile__Tile__Layer *layer = tile->layers[l];
+    cairo_surface_t *layer_surface;
+    cairo_t *layer_cr;
 
+    layer_surface = cairo_surface_create_similar (cairo_get_target (cr),
+                                                  CAIRO_CONTENT_COLOR_ALPHA,
+                                                  mapbox->priv->tile_size,
+                                                  mapbox->priv->tile_size);
+    layer_cr = cairo_create (layer_surface);
     mapbox_get_layer_data (layer->name, &primary_tag, &layer_index);
 
     for (f = 0; f < layer->n_features; f++) {
       VectorTile__Tile__Feature *feature = layer->features[f];
 
-      mapbox_process_feature (mapbox, feature, layer, primary_tag, layer_index);
+      mapbox_process_feature (mapbox, feature, layer,
+                              primary_tag, layer_index);
     }
   }
 
-  for (l = 0; l < NUM_RENDER_LAYERS; l++) {
-    GList *layer = mapbox->priv->render_layers[l];
-
-    if (layer) {
-      MapboxFeatureData *data;
-
-      layer = g_list_sort (layer, (GCompareFunc) mapbox_compare_z_index);
-      g_list_foreach (layer, (GFunc) mapbox_render_feature, cr);
-      g_list_free (layer);
-
-      mapbox->priv->render_layers[l] = NULL;
-    }
-  }
+  for (l = 0; l < NUM_RENDER_LAYERS; l++)
+    mapbox_render_layer (mapbox, l, cr);
 
   return TRUE;
 }
