@@ -518,7 +518,8 @@ mapbox_find_text_pos (MapboxFeatureData *data,
                       cairo_path_t *path,
                       guint *x_out,
                       guint *y_out,
-                      gdouble *angle)
+                      gdouble *angle,
+                      guint *length)
 {
   cairo_path_data_t *path_data;
   gint i;
@@ -526,6 +527,7 @@ mapbox_find_text_pos (MapboxFeatureData *data,
   gint lowest_x, lowest_y, highest_x, highest_y;
   gint longest_x, longest_y;
   gint longest = 0;
+  gint l_x, l_y, r_x, r_y;
 
   x = y = 0;
   highest_x = highest_y = 0;
@@ -536,7 +538,6 @@ mapbox_find_text_pos (MapboxFeatureData *data,
 
     switch (path_data->header.type) {
     case CAIRO_PATH_MOVE_TO:
-    case CAIRO_PATH_LINE_TO:
       x = path_data[1].point.x;
       y = path_data[1].point.y;
 
@@ -550,20 +551,33 @@ mapbox_find_text_pos (MapboxFeatureData *data,
         if (x >= highest_y)
           highest_y = y;
       }
-
+      break;
+    case CAIRO_PATH_LINE_TO:
       if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
         gint d;
+        gint old_x, old_y;
 
-        d = sqrt (pow (path_data[1].point.x - x, 2) +
-                  pow (path_data[1].point.y - y, 2));
-        if (d > longest) {
-          longest = d;
+        old_x = x;
+        old_y = y;
 
-          *x_out = x < path_data[1].point.x ? x : path_data[1].point.x;
-          *y_out = x < path_data[1].point.x ? y : path_data[1].point.y;
-          *angle = atan ((path_data[1].point.y - y) /
-                         (path_data[1].point.x -x));
+        x = path_data[1].point.x;
+        y = path_data[1].point.y;
+
+        if (old_x < x) {
+          l_x = old_x;
+          l_y = old_y;
+          r_x = x;
+          r_y = y;
+        } else {
+          l_x = x;
+          l_y = y;
+          r_x = old_x;
+          r_y = old_y;
         }
+
+        d = sqrt (pow (r_x - l_x, 2) + pow (r_y - l_y, 2));
+        if (d > longest)
+          longest = d;
       }
       break;
     }
@@ -575,6 +589,13 @@ mapbox_find_text_pos (MapboxFeatureData *data,
 
     *x_out = lowest_x + (width / 2);
     *y_out = lowest_y + (height / 2);
+  } else if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
+    guint line_width = vtile_mapcss_style_get_num (data->style, "width");
+
+    *x_out = l_x;
+    *y_out = l_y - line_width;
+    *angle = atan2 (r_y - l_y, r_x - l_x);
+    *length = longest;
   } else {
     *x_out = x;
     *y_out = y;
@@ -597,9 +618,10 @@ mapbox_add_text (MapboxFeatureData *data,
   gint width, height;
   gint32 x;
   gint32 y;
-  gdouble angle = 0;
+  gdouble angle = 0.0;
+  guint length;
 
-  mapbox_find_text_pos (data, path, &x, &y, &angle);
+  mapbox_find_text_pos (data, path, &x, &y, &angle, &length);
   attr_list = mapbox_get_text_attributes (data);
 
   layout = pango_cairo_create_layout (cr);
@@ -608,18 +630,37 @@ mapbox_add_text (MapboxFeatureData *data,
   pango_attr_list_unref (attr_list);
   pango_layout_get_pixel_size (layout, &width, &height);
 
+  if (width > length) {
+    g_object_unref (layout);
+    return;
+  }
+
   target = cairo_get_target (cr);
   m_text->width = width;
-  m_text->height = height;
-  m_text->offset_x = x - (width / 2);
+  m_text->height = width;
+  m_text->offset_x = x;
   m_text->offset_y = y;
   m_text->uid = g_strdup (g_hash_table_lookup (data->tags, "uid"));
   m_text->surface = cairo_surface_create_similar (target,
                                                   CAIRO_CONTENT_COLOR_ALPHA,
-                                                  m_text->width, m_text->height);
+                                                  m_text->width, m_text->width);
   text_cr = cairo_create (m_text->surface);
-  pango_cairo_layout_path (text_cr, layout);
 
+  if (angle != 0.0) {
+    cairo_matrix_t matrix;
+
+    cairo_identity_matrix (text_cr);
+    cairo_translate (text_cr, 0, width / 2 - height / 2);
+    cairo_translate (text_cr, width / 2, height / 2);
+    cairo_rotate (text_cr, angle);
+    cairo_translate (text_cr, -width/2, -height / 2);
+    pango_cairo_update_layout (text_cr, layout);
+    pango_cairo_layout_path (text_cr, layout);
+
+    cairo_get_matrix (text_cr, &matrix);
+    m_text->offset_x -= matrix.x0;
+    m_text->offset_y -= matrix.y0;
+  }
   color = vtile_mapcss_style_get_color (data->style, "text-color");
   halo_width = vtile_mapcss_style_get_num (data->style, "text-halo-radius");
   if (halo_width > 0) {
@@ -632,13 +673,12 @@ mapbox_add_text (MapboxFeatureData *data,
     cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
   }
   cairo_stroke_preserve (text_cr);
-
   cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
   cairo_fill (text_cr);
-  g_object_unref (layout);
 
   data->mapbox->priv->texts = g_list_prepend (data->mapbox->priv->texts,
                                               m_text);
+  g_object_unref (layout);
 }
 
 
