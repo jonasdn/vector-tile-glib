@@ -543,10 +543,16 @@ mapbox_find_text_pos (MapboxFeatureData *data,
   lowest_x = lowest_y = 4096;
 
   for (i = 0; i < path->num_data; i += path->data[i].header.length) {
+    gint old_x, old_y;
+
     path_data = &path->data[i];
 
     switch (path_data->header.type) {
     case CAIRO_PATH_MOVE_TO:
+    case CAIRO_PATH_LINE_TO:
+      old_x = x;
+      old_y = y;
+
       x = path_data[1].point.x;
       y = path_data[1].point.y;
 
@@ -557,20 +563,12 @@ mapbox_find_text_pos (MapboxFeatureData *data,
           highest_x = x;
         if (y <= lowest_y)
           lowest_y = y;
-        if (x >= highest_y)
+        if (y >= highest_y)
           highest_y = y;
       }
-      break;
-    case CAIRO_PATH_LINE_TO:
+
       if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
         gint d;
-        gint old_x, old_y;
-
-        old_x = x;
-        old_y = y;
-
-        x = path_data[1].point.x;
-        y = path_data[1].point.y;
 
         if (old_x < x) {
           l_x = old_x;
@@ -664,12 +662,16 @@ mapbox_add_text (MapboxFeatureData *data,
     cairo_rotate (text_cr, angle);
     cairo_translate (text_cr, -width/2, -height / 2);
     pango_cairo_update_layout (text_cr, layout);
-    pango_cairo_layout_path (text_cr, layout);
 
     cairo_get_matrix (text_cr, &matrix);
     m_text->offset_x -= matrix.x0;
     m_text->offset_y -= matrix.y0;
+  } else {
+    m_text->offset_x -= (width / 2);
+    m_text->offset_y -= (height / 2);
   }
+  pango_cairo_layout_path (text_cr, layout);
+
   color = vtile_mapcss_style_get_color (data->style, "text-color");
   halo_width = vtile_mapcss_style_get_num (data->style, "text-halo-radius");
   if (halo_width > 0) {
