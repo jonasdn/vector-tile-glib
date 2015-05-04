@@ -41,6 +41,9 @@ LT_INIT([disable-static])
 VTILE_LT_VERSION=0:1:0
 AC_SUBST(VTILE_LT_VERSION)
 
+GLIB_MKENUMS=`$PKG_CONFIG --variable=glib_mkenums glib-2.0`
+AC_SUBST(GLIB_MKENUMS)
+
 # check for gtk-doc
 m4_ifdef([GTK_DOC_CHECK], [
 GTK_DOC_CHECK([1.14],[--flavour no-tmpl])

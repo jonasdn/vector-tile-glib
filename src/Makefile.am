@@ -51,7 +51,9 @@ BUILT_SOURCES =								\
 	$(lemon_source_mapcss)						\
 	$(lemon_header_mapcss)						\
 	$(flex_source_mapcss)						\
-	$(flex_header_mapcss)
+	$(flex_header_mapcss)						\
+	vector-tile-enum-types.c					\
+	vector-tile-enum-types.h
 
 $(proto_header): $(proto_source)
 $(proto_source): $(proto_file)
@@ -64,6 +66,17 @@ $(lemon_source_mapcss): $(lemon_file_mapcss)
 $(flex_header_mapcss): $(flex_source_mapcss)
 $(flex_source_mapcss): $(flex_file_mapcss)
 	flex --outfile=$@ --header-file=$(flex_header_mapcss) $<
+
+vector-tile-enum-types.h: vector-tile-mapcss-selector.h
+	$(AM_V_GEN) ($(GLIB_MKENUMS)					\
+		--template $(srcdir)/vector-tile-enum-types.h.template	\
+		$^ > xgen-$(@F) && mv -f xgen-$(@F) $@)
+
+vector-tile-enum-types.c: vector-tile-mapcss-selector.h vector-tile-enum-types.h
+	$(AM_V_GEN) ($(GLIB_MKENUMS)					\
+		--template $(srcdir)/vector-tile-enum-types.c.template	\
+		$^ > xgen-$(@F) && mv -f xgen-$(@F) $@)
+
 
 if HAVE_INTROSPECTION
 -include $(INTROSPECTION_MAKEFILE)

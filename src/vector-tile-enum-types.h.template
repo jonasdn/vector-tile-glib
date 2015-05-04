@@ -1,0 +1,33 @@
+/*** BEGIN file-header ***/
+#ifndef __VTILE_ENUM_TYPES_H__
+#define __VTILE_ENUM_TYPES_H__
+
+G_BEGIN_DECLS
+
+/*** END file-header ***/
+
+/*** BEGIN file-production ***/
+/* enumerations from "@filename@" */
+
+/*** END file-production ***/
+
+/*** BEGIN value-header ***/
+GType @enum_name@_get_type (void) G_GNUC_CONST;
+
+#define MAPS_TYPE_@ENUMSHORT@ (@enum_name@_get_type())
+
+/**
+ * SECTION:vector-tile-enum-types
+ * @short_description: vector-tile-glib enumerated types
+ *
+ * The enumerated types defined and used by libvector-tile-glib.
+ **/
+
+/*** END value-header ***/
+
+/*** BEGIN file-tail ***/
+G_END_DECLS
+
+#endif /* __MAPS_ENUM_TYPES_H__ */
+
+/*** END file-tail ***/
