@@ -80,12 +80,12 @@ vector-tile-enum-types.c: vector-tile-mapcss-selector.h vector-tile-enum-types.h
 
 if HAVE_INTROSPECTION
 -include $(INTROSPECTION_MAKEFILE)
-VectorTileGlib-0.1.gir: libvector-tile-glib.la
-VectorTileGlib_0_1_gir_INCLUDES =					\
+VectorTileGlib-1.0.gir: libvector-tile-glib.la
+VectorTileGlib_1_0_gir_INCLUDES =					\
 	Gio-2.0								\
 	GObject-2.0							\
 	cairo-1.0
-VectorTileGlib_0_1_gir_FILES =						\
+VectorTileGlib_1_0_gir_FILES =						\
 	vector-tile-boxed.c						\
 	vector-tile-boxed.h						\
 	vector-tile-mapcss.c						\
@@ -97,20 +97,20 @@ VectorTileGlib_0_1_gir_FILES =						\
 	vector-tile-mapcss-style.h					\
 	vector-tile-mapcss-selector.c					\
 	vector-tile-mapcss-selector.h
-VectorTileGlib_0_1_gir_CFLAGS =						\
+VectorTileGlib_1_0_gir_CFLAGS =						\
 	$(VECTOR_TILE_CFLAGS)						\
 	-I$(top_srcdir)							\
 	-I$(top_builddir)						\
 	-I$(srcdir)
-VectorTileGlib_0_1_gir_NAMESPACE = VectorTileGlib
-VectorTileGlib_0_1_gir_LIBS = libvector-tile-glib.la
-VectorTileGlib_0_1_gir_PACKAGES = gobject-2.0 glib-2.0 gio-2.0 cairo
-VectorTileGlib_0_1_gir_EXPORT_PACKAGES = vector-tile-glib-1.0
-VectorTileGlib_0_1_gir_SCANNERFLAGS =					\
+VectorTileGlib_1_0_gir_NAMESPACE = VectorTileGlib
+VectorTileGlib_1_0_gir_LIBS = libvector-tile-glib.la
+VectorTileGlib_1_0_gir_PACKAGES = gobject-2.0 glib-2.0 gio-2.0 cairo
+VectorTileGlib_1_0_gir_EXPORT_PACKAGES = vector-tile-glib-1.0
+VectorTileGlib_1_0_gir_SCANNERFLAGS =					\
 	--warn-all							\
 	--symbol-prefix=vtile						\
 	--identifier-prefix=VTile
-INTROSPECTION_GIRS = VectorTileGlib-0.1.gir
+INTROSPECTION_GIRS = VectorTileGlib-1.0.gir
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
