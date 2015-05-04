@@ -74,34 +74,22 @@
 
 ident          [_a-z-]*
 num            [0-9]+|[0-9]*"."[0-9]+
+numlist        {num}","[ \t]*{num}(","[ \t]*{num})*
 hexcolor       #([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})
 zoomlevel      "z"([0-9]|[0-9]{2})
 %%
 
-"/*" {
-  BEGIN(COMMENT);
-}
-
-<COMMENT>[^*\n]* {
-  /* eat anything that's not a '*' */
- }
-<COMMENT>"*"+[^*/\n]* {
-  /* eat up '*'s not followed by '/'s */
- }
-
-<COMMENT>\n {
-  lineno++;
- }
-
-<COMMENT>"*"+"/" {
-  BEGIN(INITIAL);
-}
+"/*"                  { BEGIN(COMMENT);                        }
+<COMMENT>[^*\n]*      { /* eat anything that's not a '*' */    }
+<COMMENT>"*"+[^*/\n]* { /* eat up '*'s not followed by '/'s */ }
+<COMMENT>\n           { lineno++;                              }
+<COMMENT>"*"+"/"      { BEGIN(INITIAL);                        }
 
  /* Selector types */
-"area"   { return AREA; }
-"node"   { return NODE; }
-"way"    { return WAY;  }
-"line"   { return LINE; }
+"area"   { return AREA;   }
+"node"   { return NODE;   }
+"way"    { return WAY;    }
+"line"   { return LINE;   }
 "canvas" { return CANVAS; }
 
  /* Property values */
@@ -119,14 +107,6 @@ zoomlevel      "z"([0-9]|[0-9]{2})
 "capitalize" { return CAPITALIZE; }
 "center"     { return CENTER;     }
 "small-caps" { return SMALL_CAPS; }
-
-{num} {
-  yylval.value = vtile_mapcss_value_new ();
-  yylval.value->num = g_ascii_strtod (yytext, NULL);
-  yylval.value->type = VTILE_MAPCSS_VALUE_TYPE_NUMBER;
-
-  return NUM;
-}
 
 {hexcolor} { return string_to_hexcolor (yytext);    }
 "aqua"     { return string_to_hexcolor ("#00FFFF"); }
@@ -147,8 +127,33 @@ zoomlevel      "z"([0-9]|[0-9]{2})
 "white"    { return string_to_hexcolor ("#FFFFFF"); }
 "yellow"   { return string_to_hexcolor ("#FFFF00"); }
 
- /* Language constructs */
+{numlist} {
+  char **nums;
+  char **iter;
+  gint i = 0;
 
+  yylval.value = vtile_mapcss_value_new ();
+  yylval.value->type = VTILE_MAPCSS_VALUE_TYPE_DASH;
+
+  nums = g_strsplit (yytext, ",", -1);
+  for (iter = nums; *iter != NULL; iter++)
+    yylval.value->dash.dashes[i++] = g_ascii_strtod (*iter, NULL);
+  yylval.value->dash.num_dashes = i;
+
+  g_strfreev (nums);
+
+  return NUM_LIST;
+}
+
+{num} {
+  yylval.value = vtile_mapcss_value_new ();
+  yylval.value->num = g_ascii_strtod (yytext, NULL);
+  yylval.value->type = VTILE_MAPCSS_VALUE_TYPE_NUMBER;
+
+  return NUM;
+}
+
+ /* Language constructs */
 "{" { return LBRACE;    }
 "}" { return RBRACE;    }
 "[" { return LBRACKET;  }
@@ -157,9 +162,9 @@ zoomlevel      "z"([0-9]|[0-9]{2})
 ":" { return COLON;     }
 "!" { return NOT;       }
 "=" { return EQUAL;     }
-"," { return COMMA;     }
 "-" { return DASH;      }
 "|" { return PIPE;      }
+"," { return COMMA;     }
 
 {zoomlevel} {
   yylval.value = vtile_mapcss_value_new ();
@@ -179,13 +184,9 @@ zoomlevel      "z"([0-9]|[0-9]{2})
   column = 0;
 }
 
-[ \t] {
-  /* ignore whitespace */
-}
+[ \t] { /* ignore whitespace */ }
 
-. {
-  return yytext[0];
-}
+. { return yytext[0]; }
 
 
 %%

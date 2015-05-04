@@ -17,7 +17,7 @@ mapcss_new_and_load (const char *filename)
 
   status = vtile_mapcss_load (stylesheet, filename, &error);
   if (!status) {
-        g_print ("%s\n", error->message);
+    g_print ("%s\n", error->message);
     g_error_free (error);
 
     return FALSE;
@@ -252,8 +252,7 @@ test_errors_where (void)
   char *filename = "all.mapcss";
 
   assert_error_where ("error-selector-1.mapcss", 1, 0);
-  assert_error_where ("error-selector-2.mapcss", 3, 0);
-  assert_error_where ("error-selector-3.mapcss", 3, 3);
+  assert_error_where ("error-selector-2.mapcss", 3, 3);
   assert_error_where ("error-declaration-1.mapcss", 3, 10);
   assert_error_where ("error-declaration-2.mapcss", 4, 0);
   assert_error_where ("error-declaration-3.mapcss", 7, 4);

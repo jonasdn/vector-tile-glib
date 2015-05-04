@@ -97,13 +97,13 @@ static VTileMapCSSProperty vtile_mapcss_style_default_properties[] = {
   { .name = "linecap",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_LINE_CAP_NONE
+      .enum_value = VTILE_MAPCSS_VALUE_NONE
     }
   },
   { .name = "linejoin",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_LINE_JOIN_ROUND
+      .enum_value = VTILE_MAPCSS_VALUE_ROUND
     }
   },
   { .name = "font-family",
@@ -121,41 +121,41 @@ static VTileMapCSSProperty vtile_mapcss_style_default_properties[] = {
   { .name = "font-weight",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_FONT_WEIGHT_NORMAL
+      .enum_value = VTILE_MAPCSS_VALUE_NORMAL
     }
   },
   { .name = "font-style",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_FONT_STYLE_NORMAL
+      .enum_value = VTILE_MAPCSS_VALUE_NORMAL
     }
   },
   { .name = "font-variant",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_FONT_VARIANT_NORMAL
+      .enum_value = VTILE_MAPCSS_VALUE_NORMAL
     },
     .name = "test-decoration",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_TEXT_DECORATION_NONE
+      .enum_value = VTILE_MAPCSS_VALUE_NONE
     }
   },
   { .name = "test-transform",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_TEXT_TRANSFORM_NONE
+      .enum_value = VTILE_MAPCSS_VALUE_NONE
     },
     .name = "test-decoration",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_TEXT_DECORATION_NONE
+      .enum_value = VTILE_MAPCSS_VALUE_NONE
     }
   },
   { .name = "test-position",
     .value = {
       .type = VTILE_MAPCSS_VALUE_TYPE_ENUM,
-      .enum_value = VTILE_MAPCSS_TEXT_POSITION_CENTER
+      .enum_value = VTILE_MAPCSS_VALUE_CENTER
     }
   },
   { .name = "text-color",

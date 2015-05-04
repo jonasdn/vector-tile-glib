@@ -115,8 +115,12 @@ static void
 vtile_mapbox_finalize (GObject *object)
 {
   VTileMapbox *mapbox = (VTileMapbox *) object;
+  gint i;
 
   g_list_free_full (mapbox->priv->texts, (GDestroyNotify) free_mapbox_text);
+  for (i = 0; i < NUM_RENDER_LAYERS; i++)
+    g_free (mapbox->priv->render_layers[i]);
+
   G_OBJECT_CLASS (vtile_mapbox_parent_class)->finalize (object);
 }
 
@@ -393,8 +397,8 @@ mapbox_render_casings (MapboxFeatureData *data,
 {
   VTileMapCSSColor *color;
   VTileMapCSSDash *c_dash, *dash;
-  VTileMapCSSLineCap c_line_cap, line_cap;
-  VTileMapCSSLineJoin c_line_join, line_join;
+  VTileMapCSSEnumValue c_line_cap, line_cap;
+  VTileMapCSSEnumValue c_line_join, line_join;
   gdouble c_width, width;
   gdouble opacity;
 
@@ -418,16 +422,38 @@ mapbox_render_casings (MapboxFeatureData *data,
   cairo_set_line_width (cr, c_width);
 
   c_line_cap = vtile_mapcss_style_get_enum (data->style, "casing-linecap");
-  if (c_line_cap > 0)
-    cairo_set_line_cap (cr, c_line_cap);
-  else
+  if (c_line_cap > 0) {
+    switch (c_line_cap) {
+    case VTILE_MAPCSS_VALUE_NONE:
+      cairo_set_line_cap (cr, CAIRO_LINE_CAP_BUTT);
+      break;
+    case VTILE_MAPCSS_VALUE_ROUND:
+      cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
+      break;
+    case VTILE_MAPCSS_VALUE_SQUARE:
+      cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
+      break;
+    }
+  } else {
     cairo_set_line_cap (cr, line_cap);
+  }
 
-  c_line_join  = vtile_mapcss_style_get_enum (data->style, "casing-linecap");
-  if (c_line_join > 0)
-    cairo_set_line_cap (cr, c_line_join);
-  else
-    cairo_set_line_cap (cr, line_join);
+  c_line_join  = vtile_mapcss_style_get_enum (data->style, "casing-linejoin");
+  if (c_line_join > 0) {
+    switch (c_line_join) {
+    case VTILE_MAPCSS_VALUE_ROUND:
+      cairo_set_line_join (cr, CAIRO_LINE_JOIN_ROUND);
+      break;
+    case VTILE_MAPCSS_VALUE_MITER:
+      cairo_set_line_join (cr, CAIRO_LINE_JOIN_MITER);
+      break;
+    case VTILE_MAPCSS_VALUE_BEVEL:
+      cairo_set_line_join (cr, CAIRO_LINE_JOIN_BEVEL);
+      break;
+    }
+  } else {
+    cairo_set_line_join (cr, line_join);
+  }
 
   c_dash = vtile_mapcss_style_get_dash (data->style, "casing-dashes");
   if (c_dash)
@@ -443,8 +469,8 @@ mapbox_render_lines (MapboxFeatureData *data,
 {
   VTileMapCSSColor *color;
   VTileMapCSSDash *dash;
-  VTileMapCSSLineCap line_cap;
-  VTileMapCSSLineJoin line_join;
+  VTileMapCSSEnumValue line_cap;
+  VTileMapCSSEnumValue line_join;
   gdouble opacity;
   gdouble width;
 
@@ -462,8 +488,30 @@ mapbox_render_lines (MapboxFeatureData *data,
                          opacity);
 
   cairo_set_line_width (cr, width);
-  cairo_set_line_cap (cr, line_cap);
-  cairo_set_line_cap (cr, line_join);
+  switch (line_cap) {
+  case VTILE_MAPCSS_VALUE_NONE:
+    cairo_set_line_cap (cr, CAIRO_LINE_CAP_BUTT);
+    break;
+  case VTILE_MAPCSS_VALUE_ROUND:
+    cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
+    break;
+  case VTILE_MAPCSS_VALUE_SQUARE:
+    cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
+    break;
+  }
+
+  switch (line_join) {
+  case VTILE_MAPCSS_VALUE_ROUND:
+    cairo_set_line_join (cr, CAIRO_LINE_JOIN_ROUND);
+    break;
+  case VTILE_MAPCSS_VALUE_MITER:
+    cairo_set_line_join (cr, CAIRO_LINE_JOIN_MITER);
+    break;
+  case VTILE_MAPCSS_VALUE_BEVEL:
+    cairo_set_line_join (cr, CAIRO_LINE_JOIN_BEVEL);
+    break;
+  }
+
   cairo_set_dash (cr, dash->dashes, dash->num_dashes, 0);
 
   return mapbox_render_geometry (data, cr);
@@ -489,21 +537,21 @@ mapbox_get_text_attributes (MapboxFeatureData *data)
   pango_font_description_set_family (desc, family);
 
   enum_value = vtile_mapcss_style_get_enum (data->style, "font-style");
-  if (enum_value == VTILE_MAPCSS_FONT_STYLE_NORMAL)
+  if (enum_value == VTILE_MAPCSS_VALUE_NORMAL)
     style = PANGO_STYLE_NORMAL;
   else
     style = PANGO_STYLE_ITALIC;
   pango_font_description_set_style (desc, style);
 
   enum_value = vtile_mapcss_style_get_enum (data->style, "font-variant");
-  if (enum_value == VTILE_MAPCSS_FONT_VARIANT_NORMAL)
+  if (enum_value == VTILE_MAPCSS_VALUE_NORMAL)
     style = PANGO_VARIANT_NORMAL;
   else
     style = PANGO_VARIANT_SMALL_CAPS;
   pango_font_description_set_variant (desc, variant);
 
   enum_value = vtile_mapcss_style_get_enum (data->style, "font-weight");
-  if (enum_value == VTILE_MAPCSS_FONT_WEIGHT_NORMAL)
+  if (enum_value == VTILE_MAPCSS_VALUE_NORMAL)
     weight = PANGO_WEIGHT_NORMAL;
   else
     style = PANGO_WEIGHT_BOLD;
@@ -515,7 +563,7 @@ mapbox_get_text_attributes (MapboxFeatureData *data)
   pango_attr_list_insert (attr_list, pango_attr_font_desc_new (desc));
 
   enum_value = vtile_mapcss_style_get_enum (data->style, "text-decoration");
-  if (enum_value == VTILE_MAPCSS_TEXT_DECORATION_UNDERLINE)
+  if (enum_value == VTILE_MAPCSS_VALUE_UNDERLINE)
     pango_attr_list_insert (attr_list,
                             pango_attr_underline_new (PANGO_UNDERLINE_SINGLE));
 
@@ -975,14 +1023,8 @@ mapbox_render_tile (VTileMapbox *mapbox,
     char *primary_tag;
     guint layer_index;
     VectorTile__Tile__Layer *layer = tile->layers[l];
-    cairo_surface_t *layer_surface;
     cairo_t *layer_cr;
 
-    layer_surface = cairo_surface_create_similar (cairo_get_target (cr),
-                                                  CAIRO_CONTENT_COLOR_ALPHA,
-                                                  mapbox->priv->tile_size,
-                                                  mapbox->priv->tile_size);
-    layer_cr = cairo_create (layer_surface);
     mapbox_get_layer_data (layer->name, &primary_tag, &layer_index);
 
     for (f = 0; f < layer->n_features; f++) {

@@ -59,7 +59,7 @@ $(proto_source): $(proto_file)
 
 $(lemon_header_mapcss): $(lemon_source_mapcss)
 $(lemon_source_mapcss): $(lemon_file_mapcss)
-	-lemon $<
+	lemon $<
 
 $(flex_header_mapcss): $(flex_source_mapcss)
 $(flex_source_mapcss): $(flex_file_mapcss)

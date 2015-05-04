@@ -71,7 +71,7 @@ test_values (void)
   g_assert_cmpfloat (color->b, ==, 1.0);
 
   line_enum = vtile_mapcss_style_get_enum (style, "linecap");
-  g_assert_cmpint (line_enum, ==, VTILE_MAPCSS_LINE_CAP_ROUND);
+  g_assert_cmpint (line_enum, ==, VTILE_MAPCSS_VALUE_ROUND);
 
   dash = vtile_mapcss_style_get_dash (style, "dashes");
   g_assert_cmpint (dash->num_dashes, ==, 2);
