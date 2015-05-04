@@ -65,6 +65,11 @@ test_values (void)
   g_assert_cmpfloat (color->g, ==, 1.0);
   g_assert_cmpfloat (color->b, ==, 0.0);
 
+  color = vtile_mapcss_style_get_color (style, "halo-color");
+  g_assert_cmpfloat (color->r, ==, 1.0);
+  g_assert_cmpfloat (color->g, ==, 1.0);
+  g_assert_cmpfloat (color->b, ==, 1.0);
+
   line_enum = vtile_mapcss_style_get_enum (style, "linecap");
   g_assert_cmpint (line_enum, ==, VTILE_MAPCSS_LINE_CAP_ROUND);
 

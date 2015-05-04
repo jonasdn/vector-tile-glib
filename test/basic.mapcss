@@ -6,10 +6,11 @@ way {
     casing-width: 0.95;
     width: 1;
     color: #ff0000;
-    casing-color: #0000ff;
+    casing-color: blue;
     fill-color: #0f0;
     linecap: round;
     dashes: 2, 4;
+    halo-color: white;
 }
 
 area {

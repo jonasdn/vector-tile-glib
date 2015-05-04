@@ -97,81 +97,28 @@ zoomlevel      "z"([0-9]|[0-9]{2})
   BEGIN(INITIAL);
 }
 
-"area" {
-  return AREA;
-}
+ /* Selector types */
+"area"   { return AREA; }
+"node"   { return NODE; }
+"way"    { return WAY;  }
+"line"   { return LINE; }
+"canvas" { return CANVAS; }
 
-"node" {
-  return NODE;
-}
-
-"way" {
-  return WAY;
-}
-
-"line" {
-  return LINE;
-}
-
-"canvas" {
-  return CANVAS;
-}
-
-"none" {
-  return NONE;
-}
-
-"round" {
-  return ROUND;
-}
-
-"square" {
-  return SQUARE;
-}
-
-"bevel" {
-  return BEVEL;
-}
-
-"miter" {
-  return MITER;
-}
-
-"normal" {
-  return NORMAL;
-}
-
-"bold" {
-  return BOLD;
-}
-
-"italic" {
-  return ITALIC;
-}
-
-"underline" {
-  return UNDERLINE;
-}
-
-"uppercase" {
-  return UPPERCASE;
-}
-
-"lowercase" {
-  return LOWERCASE;
-}
-
-"capitalize" {
-  return CAPITALIZE;
-}
-
-"center" {
-  return CENTER;
-}
-
-"small-caps" {
-  return SMALL_CAPS;
-}
+ /* Property values */
+"none"       { return NONE;       }
+"round"      { return ROUND;      }
+"square"     { return SQUARE;     }
+"bevel"      { return BEVEL;      }
+"miter"      { return MITER;      }
+"normal"     { return NORMAL;     }
+"bold"       { return BOLD;       }
+"italic"     { return ITALIC;     }
+"underline"  { return UNDERLINE;  }
+"uppercase"  { return UPPERCASE;  }
+"lowercase"  { return LOWERCASE;  }
+"capitalize" { return CAPITALIZE; }
+"center"     { return CENTER;     }
+"small-caps" { return SMALL_CAPS; }
 
 {num} {
   yylval.value = vtile_mapcss_value_new ();
@@ -181,51 +128,38 @@ zoomlevel      "z"([0-9]|[0-9]{2})
   return NUM;
 }
 
-{hexcolor} { return string_to_hexcolor (yytext); }
+{hexcolor} { return string_to_hexcolor (yytext);    }
+"aqua"     { return string_to_hexcolor ("#00FFFF"); }
+"black"    { return string_to_hexcolor ("#000000"); }
+"blue"     { return string_to_hexcolor ("#0000FF"); }
+"fuchsia"  { return string_to_hexcolor ("#FF00FF"); }
+"gray"     { return string_to_hexcolor ("#808080"); }
+"geen"     { return string_to_hexcolor ("#008000"); }
+"lime"     { return string_to_hexcolor ("#00FF00"); }
+"maroon"   { return string_to_hexcolor ("#800000"); }
+"navy"     { return string_to_hexcolor ("#000080"); }
+"olive"    { return string_to_hexcolor ("#808000"); }
+"orange"   { return string_to_hexcolor ("#FFA500"); }
+"purple"   { return string_to_hexcolor ("#800080"); }
+"red"      { return string_to_hexcolor ("#FF0000"); }
+"silver"   { return string_to_hexcolor ("#C0C0C0"); }
+"teal"     { return string_to_hexcolor ("#008080"); }
+"white"    { return string_to_hexcolor ("#FFFFFF"); }
+"yellow"   { return string_to_hexcolor ("#FFFF00"); }
 
-"{" {
-  return LBRACE;
-}
+ /* Language constructs */
 
-"}" {
-  return RBRACE;
-}
-
-"[" {
-  return LBRACKET;
-}
-
-"]" {
-  return RBRACKET;
-}
-
-";" {
-  return SEMICOLON;
-}
-
-":" {
-  return COLON;
-}
-
-"!" {
-  return NOT;
-}
-
-"=" {
-  return EQUAL;
-}
-
-"," {
-  return COMMA;
-}
-
-"-" {
-  return DASH;
-}
-
-"|" {
-  return PIPE;
-}
+"{" { return LBRACE;    }
+"}" { return RBRACE;    }
+"[" { return LBRACKET;  }
+"]" { return RBRACKET;  }
+";" { return SEMICOLON; }
+":" { return COLON;     }
+"!" { return NOT;       }
+"=" { return EQUAL;     }
+"," { return COMMA;     }
+"-" { return DASH;      }
+"|" { return PIPE;      }
 
 {zoomlevel} {
   yylval.value = vtile_mapcss_value_new ();
