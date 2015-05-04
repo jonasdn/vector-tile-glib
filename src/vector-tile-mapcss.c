@@ -37,7 +37,7 @@ enum {
 };
 
 struct _VTileMapCSSPrivate {
-  GList *selectors[VTILE_MAPCSS_SELECTOR_NUM_TYPES];
+  GList *selectors[VTILE_MAPCSS_SELECTOR_TYPE_LAST];
   guint lineno;
   guint column;
   char *text;
@@ -63,7 +63,7 @@ vtile_mapcss_finalize (GObject *vmapcss)
   if (mapcss->priv->parse_error)
     g_free (mapcss->priv->parse_error);
 
-  for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++)
+  for (i = 0; i < VTILE_MAPCSS_SELECTOR_TYPE_LAST; i++)
     g_list_free_full (mapcss->priv->selectors[i], g_object_unref);
 
   G_OBJECT_CLASS (vtile_mapcss_parent_class)->finalize (vmapcss);
@@ -144,7 +144,7 @@ vtile_mapcss_init (VTileMapCSS *mapcss)
   mapcss->priv->text = NULL;
   mapcss->priv->parse_error = NULL;
 
-  for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++)
+  for (i = 0; i < VTILE_MAPCSS_SELECTOR_TYPE_LAST; i++)
     mapcss->priv->selectors[i] = NULL;
 }
 
@@ -230,7 +230,7 @@ vtile_mapcss_load (VTileMapCSS *mapcss,
   guint8 *buffer;
   gint i;
 
-  for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++) {
+  for (i = 0; i < VTILE_MAPCSS_SELECTOR_TYPE_LAST; i++) {
     if (mapcss->priv->selectors[i]) {
       g_list_free_full (mapcss->priv->selectors[i], g_object_unref);
       mapcss->priv->selectors[i] = NULL;
@@ -284,7 +284,7 @@ vtile_mapcss_load (VTileMapCSS *mapcss,
   status = vtile_mapcss_parse (mapcss, buffer, size + 2, error);
   g_free (buffer);
 
-  for (i = 0; i < VTILE_MAPCSS_SELECTOR_NUM_TYPES; i++)
+  for (i = 0; i < VTILE_MAPCSS_SELECTOR_TYPE_LAST; i++)
     mapcss->priv->selectors[i] = g_list_reverse (mapcss->priv->selectors[i]);
 
   return status;
@@ -429,7 +429,7 @@ vtile_mapcss_match_zoom (VTileMapCSSSelector *selector,
  * vtile_mapcss_get_style:
  * @mapcss: a #VTileMapCSS object.
  * @type: The type of the selector to get style for.
- * @tags: The tags of the selector.
+ * @tags: (transfer none) (nullable) (element-type utf8 utf8): The tags of the selector.
  * @zoom_level: The zoom_level of the tile.
  *
  * Get a #VTileMapCSSStyle object that represents the style

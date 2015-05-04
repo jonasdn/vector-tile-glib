@@ -219,6 +219,13 @@ vtile_mapcss_style_get_num (VTileMapCSSStyle *style,
   return -G_MAXDOUBLE;
 }
 
+/**
+ * vtile_mapcss_style_get_color:
+ * @style: A #VTileMapCSSStyle object.
+ * @name: The name of the property to get color from.
+ *
+ * Returns: (transfer none): A #VTileMapCSSColor object, do not free.
+ */
 VTileMapCSSColor *
 vtile_mapcss_style_get_color (VTileMapCSSStyle *style,
                               const char *name)
