@@ -610,6 +610,64 @@ mapbox_find_text_pos (MapboxFeatureData *data,
 }
 
 static void
+find_new_bounding_box (cairo_matrix_t matrix,
+                       gint width,
+                       gint height,
+                       gint *min_x,
+                       gint *max_x,
+                       gint *min_y,
+                       gint *max_y)
+{
+  gint ax[4];
+  gint ay[4];
+  gint i;
+
+  *min_x = *min_y = 256;
+  *max_x = *max_y = -256;
+
+  /*
+   * To find the new bounding box after the transformations
+   * from the matrix are applied we look for the new min/max values.
+   * of the transformed corners.
+   *
+   * Example:
+   *                         0'
+   *                        / \
+   *                       /   \
+   *    0--------3        1'    3'
+   *    |        |   ==>   \    /
+   *    |        |          \  /
+   *    1--------2           2'
+   *
+   * min_x = 1', max_x = 3', min_y = 0', max_y = 2'
+   *
+   *  x_new = xx * x + xy * y + x0;
+   *  y_new = yx * x + yy * y + y0;
+   *
+   */
+  ax[0] = matrix.x0;
+  ax[1] = matrix.xy * height + matrix.x0;
+  ax[2] = matrix.xx * width + matrix.xy * height + matrix.x0;
+  ax[3] = matrix.xx * width + matrix.x0;
+
+  ay[0] = matrix.y0;
+  ay[1] = matrix.yy * height + matrix.y0;
+  ay[2] = matrix.yx * width + matrix.yy * height + matrix.y0;
+  ay[3] = matrix.yx * width + matrix.y0;
+
+  for (i = 0; i < 4; i++) {
+    if (ax[i] > *max_x)
+      *max_x = ax[i];
+    if (ax[i] < *min_x)
+      *min_x = ax[i];
+    if (ay[i] > *max_y)
+      *max_y = ay[i];
+    if (ay[i] < *min_y)
+      *min_y = ay[i];
+  }
+}
+
+static void
 mapbox_add_text (MapboxFeatureData *data,
                  cairo_t *cr,
                  cairo_path_t *path,
@@ -620,6 +678,7 @@ mapbox_add_text (MapboxFeatureData *data,
   VTileMapCSSColor *color;
   gint halo_width;
   cairo_surface_t *target;
+  cairo_matrix_t matrix;
   cairo_t *text_cr;
   VTileMapboxText *m_text = g_new0 (VTileMapboxText, 1);
   gint width, height;
@@ -627,6 +686,8 @@ mapbox_add_text (MapboxFeatureData *data,
   gint32 y;
   gdouble angle = 0.0;
   guint length;
+  gint surface_offset_x;
+  gint surface_offset_y;
 
   mapbox_find_text_pos (data, path, &x, &y, &angle, &length);
   attr_list = mapbox_get_text_attributes (data);
@@ -643,33 +704,61 @@ mapbox_add_text (MapboxFeatureData *data,
   }
 
   target = cairo_get_target (cr);
-  m_text->width = width;
-  m_text->height = width;
   m_text->offset_x = x;
   m_text->offset_y = y;
   m_text->uid = g_strdup (g_hash_table_lookup (data->tags, "uid"));
-  m_text->surface = cairo_surface_create_similar (target,
-                                                  CAIRO_CONTENT_COLOR_ALPHA,
-                                                  m_text->width, m_text->width);
-  text_cr = cairo_create (m_text->surface);
 
   if (angle != 0.0) {
-    cairo_matrix_t matrix;
+    gint min_x;
+    gint max_x;
+    gint min_y;
+    gint max_y;
 
-    cairo_identity_matrix (text_cr);
-    cairo_translate (text_cr, 0, width / 2 - height / 2);
-    cairo_translate (text_cr, width / 2, height / 2);
-    cairo_rotate (text_cr, angle);
-    cairo_translate (text_cr, -width/2, -height / 2);
-    pango_cairo_update_layout (text_cr, layout);
+    /* Translate to center point and rotate with angle */
+    cairo_save (cr);
+    cairo_identity_matrix (cr);
+    cairo_translate (cr, width / 2, height / 2);
+    cairo_rotate (cr, angle);
+    cairo_translate (cr, -width / 2, -height / 2);
+    cairo_get_matrix (cr, &matrix);
+    cairo_restore (cr);
 
-    cairo_get_matrix (text_cr, &matrix);
+    /* Find the bounding box of the text after rotation */
+    find_new_bounding_box (matrix, width, height,
+                           &min_x, &max_x, &min_y, &max_y);
+
+    /* Get the new origo of the bounding box */
+    surface_offset_x = min_x;
+    surface_offset_y = min_y;
+
+    m_text->width = max_x - min_x;
+    m_text->height = max_y - min_y;
+
+    /* Get the new position of the old origo */
     m_text->offset_x -= matrix.x0;
     m_text->offset_y -= matrix.y0;
   } else {
+    m_text->width = width;
+    m_text->height = height;
     m_text->offset_x -= (width / 2);
     m_text->offset_y -= (height / 2);
+    surface_offset_x = 0;
+    surface_offset_y = 0;
+
+    cairo_get_matrix (cr, &matrix);
   }
+  m_text->surface = cairo_surface_create_similar (target,
+                                                  CAIRO_CONTENT_COLOR_ALPHA,
+                                                  m_text->width,
+                                                  m_text->height);
+
+  /* Make sure we draw to the correct place */
+  cairo_surface_set_device_offset (m_text->surface,
+                                   -surface_offset_x,
+                                   -surface_offset_y);
+  text_cr = cairo_create (m_text->surface);
+  cairo_set_matrix (text_cr, &matrix);
+  pango_cairo_update_layout (text_cr, layout);
   pango_cairo_layout_path (text_cr, layout);
 
   color = vtile_mapcss_style_get_color (data->style, "text-color");
