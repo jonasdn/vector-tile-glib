@@ -7,6 +7,7 @@ way {
     width: 1;
     color: #ff0000;
     casing-color: #0000ff;
+    fill-color: #0f0;
     linecap: round;
     dashes: 2, 4;
 }

@@ -36,6 +36,34 @@
       lineno = 1;                                                       \
       column = 0;                                                       \
     } while (0);
+
+  static gint
+  string_to_hexcolor (const char *str)
+  {
+    long val;
+    char hexcolor[7];
+    gint i;
+
+    /* Check for 3 letter hexcolor */
+    if (strlen (str + 1) == 3) {
+      for (i = 0; i < 3; i++) {
+        hexcolor[i * 2] = str[i + 1];
+        hexcolor[(i * 2) + 1] = str[i + 1];
+      }
+      hexcolor[6] = '\0';
+    } else {
+      strncpy (hexcolor, str + 1, 7);
+    }
+
+    val = strtol (hexcolor, NULL, 16);
+    yylval.value = vtile_mapcss_value_new ();
+    yylval.value->color.r = ((val >> 16) & 0xFF) / 255.0;
+    yylval.value->color.g = ((val >> 8)  & 0xFF) / 255.0;
+    yylval.value->color.b = (val & 0xFF) / 255.0;
+    yylval.value->type = VTILE_MAPCSS_VALUE_TYPE_COLOR;
+
+    return HEXCOLOR;
+  }
 %}
 
 %x COMMENT
@@ -153,19 +181,7 @@ zoomlevel      "z"([0-9]|[0-9]{2})
   return NUM;
 }
 
-{hexcolor} {
-  long val;
-
-  val = strtol (yytext + 1, NULL, 16);
-
-  yylval.value = vtile_mapcss_value_new ();
-  yylval.value->color.r = ((val >> 16) & 0xFF) / 255.0;
-  yylval.value->color.g = ((val >> 8)  & 0xFF) / 255.0;
-  yylval.value->color.b = (val & 0xFF) / 255.0;
-  yylval.value->type = VTILE_MAPCSS_VALUE_TYPE_COLOR;
-
-  return HEXCOLOR;
-}
+{hexcolor} { return string_to_hexcolor (yytext); }
 
 "{" {
   return LBRACE;
