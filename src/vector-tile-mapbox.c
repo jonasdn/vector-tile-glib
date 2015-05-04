@@ -597,6 +597,9 @@ mapbox_find_text_pos (MapboxFeatureData *data,
 
     switch (path_data->header.type) {
     case CAIRO_PATH_MOVE_TO:
+      x = path_data[1].point.x;
+      y = path_data[1].point.y;
+      break;
     case CAIRO_PATH_LINE_TO:
       old_x = x;
       old_y = y;
@@ -734,8 +737,6 @@ mapbox_add_text (MapboxFeatureData *data,
   gint32 y;
   gdouble angle = 0.0;
   guint length;
-  gint surface_offset_x;
-  gint surface_offset_y;
 
   mapbox_find_text_pos (data, path, &x, &y, &angle, &length);
   attr_list = mapbox_get_text_attributes (data);
@@ -776,22 +777,22 @@ mapbox_add_text (MapboxFeatureData *data,
                            &min_x, &max_x, &min_y, &max_y);
 
     /* Get the new origo of the bounding box */
-    surface_offset_x = min_x;
-    surface_offset_y = min_y;
+    m_text->surface_offset_x = min_x;
+    m_text->surface_offset_y = min_y;
 
     m_text->width = max_x - min_x;
     m_text->height = max_y - min_y;
 
     /* Get the new position of the old origo */
-    m_text->offset_x -= matrix.x0;
-    m_text->offset_y -= matrix.y0;
+    m_text->offset_x -= matrix.x0 - min_x;
+    m_text->offset_y -= matrix.y0 - min_y;
   } else {
     m_text->width = width;
     m_text->height = height;
     m_text->offset_x -= (width / 2);
     m_text->offset_y -= (height / 2);
-    surface_offset_x = 0;
-    surface_offset_y = 0;
+    m_text->surface_offset_x = 0;
+    m_text->surface_offset_y = 0;
 
     cairo_get_matrix (cr, &matrix);
   }
@@ -802,8 +803,9 @@ mapbox_add_text (MapboxFeatureData *data,
 
   /* Make sure we draw to the correct place */
   cairo_surface_set_device_offset (m_text->surface,
-                                   -surface_offset_x,
-                                   -surface_offset_y);
+                                   -m_text->surface_offset_x,
+                                   -m_text->surface_offset_y);
+
   text_cr = cairo_create (m_text->surface);
   cairo_set_matrix (text_cr, &matrix);
   pango_cairo_update_layout (text_cr, layout);
