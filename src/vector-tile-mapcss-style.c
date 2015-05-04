@@ -303,6 +303,6 @@ vtile_mapcss_style_new ()
 void
 vtile_mapcss_style_free (VTileMapCSSStyle *style)
 {
-  g_hash_table_destroy (style->properties);
+  g_hash_table_unref (style->properties);
   g_free (style);
 }
