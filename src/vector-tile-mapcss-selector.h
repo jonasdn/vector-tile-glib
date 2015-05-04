@@ -23,7 +23,7 @@
 G_BEGIN_DECLS
 
 /**
- * SECTION: VTileMapCSSSelector (skip)
+ * SECTION: VTileMapCSSSelector: (skip)
  *
  */
 
