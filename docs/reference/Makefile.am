@@ -84,7 +84,7 @@ expand_content_files=
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
 GTKDOC_CFLAGS=$(VECTOR_TILE_CFLAGS) -I$(top_srcdir) -I$(top_builddir)
-GTKDOC_LIBS=$(VECTOR_TILE_LIBS) $(top_srcdir)/src/libvector-tile-glib.la
+GTKDOC_LIBS=$(VECTOR_TILE_LIBS) $(top_builddir)/src/libvector-tile-glib.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
