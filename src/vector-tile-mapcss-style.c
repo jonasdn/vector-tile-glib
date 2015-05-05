@@ -205,7 +205,13 @@ vtile_mapcss_style_add_num (VTileMapCSSStyle *style,
   value->num = num;
   g_hash_table_insert (style->properties, g_strdup (name), value);
 }
-
+/**
+ * vtile_mapcss_style_get_num:
+ * @style: A #VTileMapCSSStyle object.
+ * @name: The name of the property to get the number from.
+ *
+ * Returns: The number value of the @name property.
+ */
 gdouble
 vtile_mapcss_style_get_num (VTileMapCSSStyle *style,
                             const char *name)
@@ -239,6 +245,13 @@ vtile_mapcss_style_get_color (VTileMapCSSStyle *style,
   return NULL;
 }
 
+/**
+ * vtile_mapcss_style_get_dash:
+ * @style: A #VTileMapCSSDash object.
+ * @name: The name of the property to get dash from.
+ *
+ * Returns: (transfer none): A #VTileMapCSSDash object, do not free.
+ */
 VTileMapCSSDash *
 vtile_mapcss_style_get_dash (VTileMapCSSStyle *style,
                              const char *name)
@@ -252,7 +265,14 @@ vtile_mapcss_style_get_dash (VTileMapCSSStyle *style,
   return NULL;
 }
 
-gint
+/**
+ * vtile_mapcss_style_get_enum:
+ * @style: A #VTileMapCSSStyle object.
+ * @name: The name of the property to get an enum valuefrom.
+ *
+ * Returns: A #VTileMapCSSEnumValue.
+ */
+VTileMapCSSEnumValue
 vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
                              const char *name)
 {
@@ -264,7 +284,13 @@ vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
 
   return -1;
 }
-
+/**
+ * vtile_mapcss_style_get_str:
+ * @style: A #VTileMapCSSStyle object.
+ * @name: The name of the property to get a string value from.
+ *
+ * Returns: A string value for the @name property, do not free.
+ */
 char *
 vtile_mapcss_style_get_str (VTileMapCSSStyle *style,
                             const char *name)
@@ -300,6 +326,11 @@ vtile_mapcss_style_new ()
   return style;
 }
 
+/**
+ * vtile_mapcss_style_free:
+ *
+ * Frees a #VTileMapCSSStyle object.
+ */
 void
 vtile_mapcss_style_free (VTileMapCSSStyle *style)
 {

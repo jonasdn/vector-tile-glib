@@ -60,10 +60,30 @@ typedef struct {
   char *uid;
 } VTileMapboxText;
 
-VTileMapbox *vtile_mapbox_new (guint8 *data,
-                               gssize length,
-                               guint tile_size,
+#define VTILE_MAPBOX_ERROR (vtile_mapbox_error_quark ())
+
+/**
+ * VTileMapboxError:
+ * @VTILE_MAPBOX:ERROR_LOAD: An error occured loading the tile.
+ *
+ * Error codes returned by vtile_mapbox functions.
+ */
+typedef enum {
+  VTILE_MAPBOX_ERROR_LOAD
+} VTileMapboxError;
+
+VTileMapbox *vtile_mapbox_new (guint tile_size,
                                guint zoom_level);
+
+gboolean
+vtile_mapbox_load (VTileMapbox *mapbox,
+                   guint8 *data,
+                   gsize size,
+                   GError **error);
+gboolean
+vtile_mapbox_load_from_file (VTileMapbox *mapbox,
+                             const char *filename,
+                             GError **error);
 
 void vtile_mapbox_set_stylesheet (VTileMapbox *mapbox,
                                   VTileMapCSS *stylesheet);
@@ -83,6 +103,7 @@ gboolean vtile_mapbox_render_finish (VTileMapbox *mapbox,
 
 GList *vtile_mapbox_get_texts (VTileMapbox *mapbox);
 
+GQuark vtile_mapbox_error_quark (void);
 
 G_END_DECLS
 

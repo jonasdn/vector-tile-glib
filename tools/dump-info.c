@@ -6,7 +6,7 @@
 #include "vector-tile-mapcss.h"
 #include "vector-tile-mapcss-style.h"
 
-void vtile_mapbox_dump_info (VTileMapbox *mapbox);
+void vtile_mapbox_dump_info (VTileMapbox *mapbox, guint8 *data, gssize size);
 
 static char **input;
 
@@ -83,8 +83,8 @@ main (int argc, char **argv)
   g_object_unref (stream);
 
 
-  mapbox = vtile_mapbox_new (tile_buffer, size, 256, 0);
-  vtile_mapbox_dump_info (mapbox);
+  mapbox = vtile_mapbox_new (256, 0);
+  vtile_mapbox_dump_info (mapbox, tile_buffer, size);
   
   
   g_free (tile_buffer);

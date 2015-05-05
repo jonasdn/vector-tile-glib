@@ -57,8 +57,8 @@ VTileMapCSSColor *vtile_mapcss_style_get_color (VTileMapCSSStyle *style,
                                                 const char *name);
 VTileMapCSSDash *vtile_mapcss_style_get_dash (VTileMapCSSStyle *style,
                                               const char *name);
-gint vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
-                                  const char *name);
+VTileMapCSSEnumValue vtile_mapcss_style_get_enum (VTileMapCSSStyle *style,
+                                                  const char *name);
 
 char *vtile_mapcss_style_get_str (VTileMapCSSStyle *style,
                                   const char *name);

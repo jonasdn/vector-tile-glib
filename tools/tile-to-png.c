@@ -107,7 +107,8 @@ main (int argc, char **argv)
     return 0;
   }
 
-  mapbox = vtile_mapbox_new (tile_buffer, size, tile_size, zoom_level);
+  mapbox = vtile_mapbox_new (tile_size, zoom_level);
+  vtile_mapbox_load (mapbox, tile_buffer, size, NULL);
   vtile_mapbox_set_stylesheet (mapbox, stylesheet);
 
   if (!vtile_mapbox_render (mapbox, cr, NULL)) {

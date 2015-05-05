@@ -15,6 +15,7 @@ way[highway] {
     casing-width: 1;
     width: 5;
     casing-color: #C7B8A4;
+    dashes: 2, 2;
 }
 
 way[highway=motorway], way[highway=motorway_link],

@@ -97,12 +97,80 @@ struct _VTileMapboxPrivate {
   guint tile_size;
   guint zoom_level;
 
+  VectorTile__Tile *tile;
   GList *texts;
   MapboxRenderLayer *render_layers[NUM_RENDER_LAYERS];
   VTileMapCSS *stylesheet;
 };
 
+enum {
+  PROP_0,
+
+  PROP_TILE_SIZE,
+  PROP_ZOOM_LEVEL
+};
+
 G_DEFINE_TYPE_WITH_PRIVATE (VTileMapbox, vtile_mapbox, G_TYPE_OBJECT)
+
+GQuark
+vtile_mapbox_error_quark (void)
+{
+  static GQuark quark;
+  if (!quark)
+    quark = g_quark_from_static_string ("vtile_mapbox_error");
+
+  return quark;
+}
+
+static void
+vtile_mapbox_set_property (GObject *object,
+                           guint property_id,
+                           const GValue *value,
+                           GParamSpec *pspec)
+{
+  VTileMapbox *mapbox = VTILE_MAPBOX (object);
+
+  switch (property_id)
+    {
+    case PROP_TILE_SIZE:
+      mapbox->priv->tile_size = g_value_get_uint (value);
+      break;
+
+    case PROP_ZOOM_LEVEL:
+      mapbox->priv->zoom_level = g_value_get_uint (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+vtile_mapbox_get_property (GObject    *object,
+                           guint       property_id,
+                           GValue     *value,
+                           GParamSpec *pspec)
+{
+  VTileMapbox *mapbox = VTILE_MAPBOX (object);
+
+  switch (property_id)
+    {
+    case PROP_TILE_SIZE:
+      g_value_set_uint (value,
+                        mapbox->priv->tile_size);
+      break;
+
+    case PROP_ZOOM_LEVEL:
+      g_value_set_uint (value,
+                        mapbox->priv->zoom_level);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
 
 static void
 free_mapbox_text (VTileMapboxText *text) {
@@ -120,6 +188,9 @@ vtile_mapbox_finalize (GObject *object)
   g_list_free_full (mapbox->priv->texts, (GDestroyNotify) free_mapbox_text);
   for (i = 0; i < NUM_RENDER_LAYERS; i++)
     g_free (mapbox->priv->render_layers[i]);
+  
+  if (mapbox->priv->tile)
+    vector_tile__tile__free_unpacked (mapbox->priv->tile, NULL);
 
   G_OBJECT_CLASS (vtile_mapbox_parent_class)->finalize (object);
 }
@@ -128,8 +199,41 @@ static void
 vtile_mapbox_class_init (VTileMapboxClass *klass)
 {
   GObjectClass *mapbox_class = G_OBJECT_CLASS (klass);
+  GParamSpec *pspec;
 
   mapbox_class->finalize = vtile_mapbox_finalize;
+  mapbox_class->get_property = vtile_mapbox_get_property;
+  mapbox_class->set_property = vtile_mapbox_set_property;
+
+  /**
+   * VtileMapbox:tile-size
+   *
+   * The width and height of the tile.
+   */
+  pspec = g_param_spec_uint ("tile-size",
+                             "Tile size",
+                             "The size of the tile",
+                             0,
+                             4096,
+                             256,
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                             G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (mapbox_class, PROP_TILE_SIZE, pspec);
+
+  /**
+   * VtileMapbox:zoom-level
+   *
+   * The zoom level of the tile.
+   */
+  pspec = g_param_spec_uint ("zoom-level",
+                             "Zoom level",
+                             "The zoom level of the tile",
+                             0,
+                             19,
+                             0,
+                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                             G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (mapbox_class, PROP_ZOOM_LEVEL, pspec);
 }
 
 static void
@@ -138,6 +242,7 @@ vtile_mapbox_init (VTileMapbox *mapbox)
   gint i;
 
   mapbox->priv = vtile_mapbox_get_instance_private (mapbox);
+  mapbox->priv->tile = NULL;
   mapbox->priv->texts = NULL;
   for (i = 0; i < NUM_RENDER_LAYERS; i++)
     mapbox->priv->render_layers[i] = g_new0 (MapboxRenderLayer, 1);
@@ -145,8 +250,6 @@ vtile_mapbox_init (VTileMapbox *mapbox)
 
 /**
  * vtile_mapbox_new:
- * @data: data of the tile to render.
- * @size: the size of the @data.
  * @tile_size: the size (width/height) of the tile to render.
  * @zoom_level: the zoom level of the tile.
  *
@@ -155,21 +258,118 @@ vtile_mapbox_init (VTileMapbox *mapbox)
  * Returns: a new #VTileMapbox object. Use g_object_unref() when done.
  */
 VTileMapbox *
-vtile_mapbox_new (guint8 *data,
-                  gssize size,
-                  guint tile_size,
+vtile_mapbox_new (guint tile_size,
                   guint zoom_level)
 {
   VTileMapbox *mapbox;
 
   mapbox = g_object_new (VTILE_TYPE_MAPBOX, NULL);
 
-  mapbox->priv->data = data;
-  mapbox->priv->size = size;
   mapbox->priv->tile_size = tile_size;
   mapbox->priv->zoom_level = zoom_level;
 
   return mapbox;
+}
+
+/**
+ * vtile_mapbox_load:
+ * @data: the data to load tile from.
+ * @size: the size of @data.
+ * @error: a #GError.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ */
+gboolean
+vtile_mapbox_load (VTileMapbox *mapbox,
+                   guint8 *data,
+                   gsize size,
+                   GError **error)
+{
+  g_return_val_if_fail (mapbox != NULL, FALSE);
+  
+  mapbox->priv->tile = vector_tile__tile__unpack (NULL,
+                                                  size,
+                                                  data);
+  if (!mapbox->priv->tile) {
+    g_set_error (error, VTILE_MAPBOX_ERROR, VTILE_MAPBOX_ERROR_LOAD,
+                 "Failed to load tile.");
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * vtile_mapbox_load_from_file:
+ * @mapbox: a #VTileMapbox object.
+ * @filename: the file to load a tile from.
+ * @error: a #GError.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise.
+ */
+gboolean
+vtile_mapbox_load_from_file (VTileMapbox *mapbox,
+                             const char *filename,
+                             GError **error)
+{
+  GFile *file;
+  GFileInfo *info;
+  GFileInputStream *stream;
+  goffset size;
+  gssize bytes_read;
+  gboolean status;
+  guint8 *tile_buffer;
+  
+  g_return_val_if_fail (mapbox != NULL, FALSE);
+  g_return_val_if_fail (filename != NULL, FALSE);
+
+  file = g_file_new_for_path (filename);
+  info = g_file_query_info (file,
+                            G_FILE_ATTRIBUTE_STANDARD_SIZE,
+                            G_FILE_QUERY_INFO_NONE,
+                            NULL,
+                            NULL);
+  if (!info) {
+    g_object_unref (file);
+    g_set_error (error, VTILE_MAPBOX_ERROR, VTILE_MAPBOX_ERROR_LOAD,
+                 "Failed to load tile.");
+    return FALSE;
+  }
+
+  size = g_file_info_get_size (info);
+  tile_buffer = g_malloc (size);
+
+  stream = g_file_read (file, NULL, NULL);
+  status = g_input_stream_read_all ((GInputStream *) stream,
+                                    tile_buffer,
+                                    size,
+                                    &bytes_read,
+                                    NULL,
+                                    NULL);
+  if (!status) {
+    g_free (tile_buffer);
+    g_object_unref (file);
+    g_set_error (error, VTILE_MAPBOX_ERROR, VTILE_MAPBOX_ERROR_LOAD,
+                 "Failed to load tile.");
+    return FALSE;
+  }
+
+  g_object_unref (file);
+  g_object_unref (info);
+  g_object_unref (stream);
+
+  mapbox->priv->tile = vector_tile__tile__unpack (NULL,
+                                                  size,
+                                                  tile_buffer);
+  g_free (tile_buffer);
+  
+  if (!mapbox->priv->tile) {
+    g_set_error (error, VTILE_MAPBOX_ERROR, VTILE_MAPBOX_ERROR_LOAD,
+                 "Failed to load tile.");
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 /**
@@ -1056,24 +1256,11 @@ vtile_mapbox_render (VTileMapbox *mapbox,
                      cairo_t *cr,
                      GError **error)
 {
-  VectorTile__Tile *tile;
-  gboolean status;
-
   g_return_val_if_fail (mapbox != NULL, FALSE);
+  g_return_val_if_fail (mapbox->priv->tile != NULL, FALSE);
   g_return_val_if_fail (cr != NULL, FALSE);
 
-  tile = vector_tile__tile__unpack (NULL,
-                                    mapbox->priv->size,
-                                    mapbox->priv->data);
-  if (!tile) {
-    return FALSE;
-  }
-
-  status = mapbox_render_tile (mapbox, tile, cr);
-  vector_tile__tile__free_unpacked (tile, NULL);
-
-
-  return status;
+  return mapbox_render_tile (mapbox, mapbox->priv->tile, cr);
 }
 
 static void
@@ -1135,15 +1322,17 @@ vtile_mapbox_render_finish (VTileMapbox *mapbox,
  * vtile_mapbox_dump_info: (skip)
  */
 void
-vtile_mapbox_dump_info (VTileMapbox *mapbox)
+vtile_mapbox_dump_info (VTileMapbox *mapbox,
+                        guint8 *data,
+                        gsize size)
 {
   gint l, f;
   VectorTile__Tile *tile;
   GHashTable *tags;
 
   tile = vector_tile__tile__unpack (NULL,
-                                    mapbox->priv->size,
-                                    mapbox->priv->data);
+                                    size,
+                                    data);
   if (!tile)
     return;
 
