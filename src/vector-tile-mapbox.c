@@ -987,15 +987,19 @@ mapbox_add_text (MapboxFeatureData *data,
   PangoLayout *layout;
   VTileMapCSSColor *color;
   gint halo_width;
-  cairo_surface_t *target;
+  cairo_surface_t *target, *rotated;
   cairo_matrix_t matrix;
-  cairo_t *text_cr;
+  cairo_t *text_cr, *rotated_cr;
   VTileMapboxText *m_text = g_new0 (VTileMapboxText, 1);
   gint width, height;
   gint32 x;
   gint32 y;
   gdouble angle = 0.0;
   guint length;
+  gint min_x;
+  gint max_x;
+  gint min_y;
+  gint max_y;
 
   mapbox_find_text_pos (data, path, &x, &y, &angle, &length);
   attr_list = mapbox_get_text_attributes (data);
@@ -1017,11 +1021,6 @@ mapbox_add_text (MapboxFeatureData *data,
   m_text->uid = g_strdup (g_hash_table_lookup (data->tags, "uid"));
 
   if (angle != 0.0) {
-    gint min_x;
-    gint max_x;
-    gint min_y;
-    gint max_y;
-
     /* Translate to center point and rotate with angle */
     cairo_save (cr);
     cairo_identity_matrix (cr);
@@ -1035,10 +1034,6 @@ mapbox_add_text (MapboxFeatureData *data,
     find_new_bounding_box (matrix, width, height,
                            &min_x, &max_x, &min_y, &max_y);
 
-    /* Get the new origo of the bounding box */
-    m_text->surface_offset_x = min_x;
-    m_text->surface_offset_y = min_y;
-
     m_text->width = max_x - min_x;
     m_text->height = max_y - min_y;
 
@@ -1050,41 +1045,53 @@ mapbox_add_text (MapboxFeatureData *data,
     m_text->height = height;
     m_text->offset_x -= (width / 2);
     m_text->offset_y -= (height / 2);
-    m_text->surface_offset_x = 0;
-    m_text->surface_offset_y = 0;
+    min_x = 0;
+    min_y = 0;
 
     cairo_get_matrix (cr, &matrix);
   }
+
+  rotated = cairo_surface_create_similar (target,
+                                          CAIRO_CONTENT_COLOR_ALPHA,
+                                          m_text->width,
+                                          m_text->height);
+
   m_text->surface = cairo_surface_create_similar (target,
                                                   CAIRO_CONTENT_COLOR_ALPHA,
                                                   m_text->width,
                                                   m_text->height);
 
   /* Make sure we draw to the correct place */
-  cairo_surface_set_device_offset (m_text->surface,
-                                   -m_text->surface_offset_x,
-                                   -m_text->surface_offset_y);
-
-  text_cr = cairo_create (m_text->surface);
-  cairo_set_matrix (text_cr, &matrix);
-  pango_cairo_update_layout (text_cr, layout);
-  pango_cairo_layout_path (text_cr, layout);
+  cairo_surface_set_device_offset (rotated, -min_x, -min_y);
+  rotated_cr = cairo_create (rotated);
+  cairo_set_matrix (rotated_cr, &matrix);
+  pango_cairo_update_layout (rotated_cr, layout);
+  pango_cairo_layout_path (rotated_cr, layout);
 
   color = vtile_mapcss_style_get_color (data->style, "text-color");
   halo_width = vtile_mapcss_style_get_num (data->style, "text-halo-radius");
   if (halo_width > 0) {
     VTileMapCSSColor *halo_color;
 
-    cairo_set_line_width (text_cr, halo_width);
+    cairo_set_line_width (rotated_cr, halo_width);
     halo_color = vtile_mapcss_style_get_color (data->style, "text-halo-color");
-    cairo_set_source_rgb (text_cr, halo_color->r, halo_color->g, halo_color->b);
+    cairo_set_source_rgb (rotated_cr,
+                          halo_color->r,
+                          halo_color->g,
+                          halo_color->b);
   } else {
-    cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
+    cairo_set_source_rgb (rotated_cr, color->r, color->g, color->b);
   }
-  cairo_stroke_preserve (text_cr);
-  cairo_set_source_rgb (text_cr, color->r, color->g, color->b);
-  cairo_fill (text_cr);
+  cairo_stroke_preserve (rotated_cr);
+  cairo_set_source_rgb (rotated_cr, color->r, color->g, color->b);
+  cairo_fill (rotated_cr);
 
+  text_cr = cairo_create (m_text->surface);
+  cairo_set_source_surface (text_cr, rotated, -min_x, -min_y);
+  cairo_paint(text_cr);
+  cairo_surface_destroy (rotated);
+
+  cairo_surface_write_to_png (m_text->surface, g_strdup_printf ("%s.png", text));
   data->mapbox->priv->texts = g_list_prepend (data->mapbox->priv->texts,
                                               m_text);
   g_object_unref (layout);

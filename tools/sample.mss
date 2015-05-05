@@ -185,7 +185,7 @@ way|z11-12[highway=residential] {
     opacity: 0;
 }
 
-way|z17[highway=residential] {
+way[highway] {
     text: name;
     text-color: #222233;
     text-halo-color: white;

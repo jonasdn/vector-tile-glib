@@ -55,8 +55,6 @@ typedef struct {
   gint width;
   gint height;
   cairo_surface_t *surface;
-  gint surface_offset_x;
-  gint surface_offset_y;
   char *uid;
 } VTileMapboxText;
 
