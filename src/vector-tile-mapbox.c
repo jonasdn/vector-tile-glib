@@ -1091,7 +1091,6 @@ mapbox_add_text (MapboxFeatureData *data,
   cairo_paint(text_cr);
   cairo_surface_destroy (rotated);
 
-  cairo_surface_write_to_png (m_text->surface, g_strdup_printf ("%s.png", text));
   data->mapbox->priv->texts = g_list_prepend (data->mapbox->priv->texts,
                                               m_text);
   g_object_unref (layout);
