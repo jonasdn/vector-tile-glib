@@ -3,7 +3,7 @@ noinst_PROGRAMS = tile-to-png dump-info
 AM_CPPFLAGS =								\
 	$(VECTOR_TILE_CFLAGS)						\
 	-I$(top_srcdir)/src
-LDADD = $(VECTOR_TILE_LIBS) $(top_srcdir)/src/libvector-tile-glib.la
+LDADD = $(VECTOR_TILE_LIBS) $(top_builddir)/src/libvector-tile-glib.la
 
 tile_to_png_SOURCES = tile-to-png.c
 dump_info_SOURCES = dump-info.c

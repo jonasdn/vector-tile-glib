@@ -1,5 +1,7 @@
 noinst_PROGRAMS = test-mapcss-parse test-mapcss-values
 
+EXTRA_DIST = $(wildcard *.mapcss) test-mapcss-parse.c.in
+
 AM_CPPFLAGS = $(VECTOR_TILE_CFLAGS) -I$(top_srcdir)/src
 
 test_mapcss_parse_SOURCES = test-mapcss-parse.c

@@ -34,7 +34,7 @@ test_values (void)
   gint line_enum;
   VTileMapCSSColor *color;
   VTileMapCSSDash *dash;
-  char *filename = "basic.mapcss";
+  char *filename = "@srcdir@/basic.mapcss";
 
   g_assert (mapcss_new_and_load (filename));
   g_assert (stylesheet != NULL);

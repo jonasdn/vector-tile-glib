@@ -2,6 +2,8 @@
 #ifndef __VTILE_ENUM_TYPES_H__
 #define __VTILE_ENUM_TYPES_H__
 
+#include <vector-tile-mapbox.h>
+
 G_BEGIN_DECLS
 
 /*** END file-header ***/

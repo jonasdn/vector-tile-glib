@@ -60,7 +60,7 @@ typedef enum {
   VTILE_MAPCSS_SELECTOR_TYPE_NODE,
   VTILE_MAPCSS_SELECTOR_TYPE_AREA,
   VTILE_MAPCSS_SELECTOR_TYPE_LINE,
-  /*< private >*/
+  /* <private> */
   VTILE_MAPCSS_SELECTOR_TYPE_LAST
 } VTileMapCSSSelectorType;
 

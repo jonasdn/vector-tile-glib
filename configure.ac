@@ -57,6 +57,8 @@ AC_CONFIG_FILES([
         src/Makefile
         tools/Makefile
         test/Makefile
+        test/test-mapcss-parse.c
+        test/test-mapcss-values.c
         docs/Makefile
         docs/reference/Makefile
         docs/reference/version.xml])
