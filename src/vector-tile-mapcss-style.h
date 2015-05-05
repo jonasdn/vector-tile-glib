@@ -30,6 +30,9 @@ G_BEGIN_DECLS
  */
 typedef struct _VTileMapCSSStyle VTileMapCSSStyle;
 
+/**
+ * VTileMapCSSEnumValue:
+ */
 typedef enum {
   VTILE_MAPCSS_VALUE_NONE,
   VTILE_MAPCSS_VALUE_ROUND,

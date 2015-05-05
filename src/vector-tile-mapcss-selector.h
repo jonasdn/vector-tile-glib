@@ -22,11 +22,6 @@
 
 G_BEGIN_DECLS
 
-/**
- * SECTION: VTileMapCSSSelector: (skip)
- *
- */
-
 GType vtile_mapcss_selector_get_type (void) G_GNUC_CONST;
 
 #define VTILE_TYPE_MAPCSS_SELECTOR                  (vtile_mapcss_selector_get_type ())
@@ -53,12 +48,11 @@ struct _VTileMapCSSSelectorClass {
 
 /**
  * VTileMapCSSSelectorType:
- * @VTILE_MAPCSS_SELECTOR_TYPE_CANVAS: canvas
- * @VTILE_MAPCSS_SELECTOR_TYPE_WAY: way
- * @VTILE_MAPCSS_SELECTOR_TYPE_NODE: node
- * @VTILE_MAPCSS_SELECTOR_TYPE_AREA: area
- * @VTILE_MAPCSS_SELECTOR_TYPE_LINE: line
- * @VTILE_MAPCSS_SELECTOR_TYPE_LAST: (skip)
+ * @VTILE_MAPCSS_SELECTOR_TYPE_CANVAS: indicate a canvas selector
+ * @VTILE_MAPCSS_SELECTOR_TYPE_WAY: indicate a way selector
+ * @VTILE_MAPCSS_SELECTOR_TYPE_NODE: indicate a node selector
+ * @VTILE_MAPCSS_SELECTOR_TYPE_AREA: indicate an area selector
+ * @VTILE_MAPCSS_SELECTOR_TYPE_LINE: indicate a line selector
  */
 typedef enum {
   VTILE_MAPCSS_SELECTOR_TYPE_CANVAS,
@@ -66,6 +60,7 @@ typedef enum {
   VTILE_MAPCSS_SELECTOR_TYPE_NODE,
   VTILE_MAPCSS_SELECTOR_TYPE_AREA,
   VTILE_MAPCSS_SELECTOR_TYPE_LINE,
+  /*< private >*/
   VTILE_MAPCSS_SELECTOR_TYPE_LAST
 } VTileMapCSSSelectorType;
 

@@ -3,6 +3,8 @@
 <TITLE>VTileMapbox</TITLE>
 VTileMapboxText
 vtile_mapbox_new
+vtile_mapbox_load
+vtile_mapbox_load_from_file
 vtile_mapbox_set_stylesheet
 vtile_mapbox_render
 vtile_mapbox_render_async
@@ -24,6 +26,7 @@ vtile_mapbox_get_type
 <SECTION>
 <FILE>vector-tile-mapcss</FILE>
 <TITLE>VTileMapCSS</TITLE>
+VTileMapCSSSelectorType
 VTileMapCSS
 vtile_mapcss_new
 vtile_mapcss_load
@@ -47,6 +50,7 @@ vtile_mapcss_get_type
 VTileMapCSSStyle
 VTileMapCSSColor
 VTileMapCSSDash
+VTileMapCSSEnumValue
 vtile_mapcss_style_new
 vtile_mapcss_style_free
 vtile_mapcss_style_get_num

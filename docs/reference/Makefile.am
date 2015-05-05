@@ -61,7 +61,6 @@ IGNORE_HFILES=								\
 	vector-tile-mapcss-lemon.h					\
 	vector-tile-mapcss-flex.h					\
 	vector-tile-mapcss-private.h					\
-	vector-tile-mapcss-selector.h					\
 	vector-tile-mapcss-value.h					\
 	vector_tile.pb-c.h
 
