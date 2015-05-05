@@ -26,6 +26,65 @@
 #include "vector-tile-mapbox.h"
 #include "vector_tile.pb-c.h"
 
+/**
+ * SECTION:vector-tile-mapbox
+ * @short_description: Render a Mapbox vector tile to a cairo context
+ * @Title: VTileMapbox
+ *
+ * Example code:
+ * |[<!-- language="C" -->
+ *
+ * #include <stdlib.h>
+ * #include <cairo.h>
+ *
+ * #include <vector-tile-mapbox.h>
+ * #include <vector-tile-mapcss.h>
+ *
+ * int
+ * main (int argc, char **argv)
+ * {
+ *   cairo_surface_t *surface;
+ *   cairo_t *cr;
+ *   VTileMapbox *mapbox;
+ *   VTileMapCSS *stylesheet;
+ *   GError *error = NULL;
+ *
+ *   surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+ *                                         256, 256);
+ *   cr = cairo_create (surface);
+ *
+ *   mapbox = vtile_mapbox_new (256, 10);
+ *   if (!vtile_mapbox_load_from_file (mapbox, "test.mapbox", &error)) {
+ *     g_printerr ("%s\n", error->message);
+ *     g_error_free (error);
+ *     exit (1);
+ *   }
+ *
+ *   stylesheet = vtile_mapcss_new ();
+ *   if (!vtile_mapcss_load (stylesheet, "test.mapcss", &error)) {
+ *   g_printerr ("%s\n", error->message);
+ *     g_error_free (error);
+ *     exit (1);
+ *   }
+ *   vtile_mapbox_set_stylesheet (mapbox, stylesheet);
+ *
+ *   if (!vtile_mapbox_render (mapbox, cr, &error)) {
+ *     g_print ("Failed to render!\n");
+ *   } else {
+ *     cairo_surface_write_to_png (surface, "test.png");
+ *   }
+ *   cairo_destroy (cr);
+ *   cairo_surface_destroy (surface);
+ *
+ *   g_object_unref (stylesheet);
+ *   g_object_unref (mapbox);
+ *
+ *   return 0;
+ * }
+ * ]|
+ */
+
+
 /*
  * ZigZag encoding maps signed integers to unsigned integers so that numbers
  * with a small absolute value (for instance, -1) have a small varint encoded

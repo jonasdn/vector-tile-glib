@@ -2,6 +2,7 @@
 <FILE>vector-tile-mapbox</FILE>
 <TITLE>VTileMapbox</TITLE>
 VTileMapboxText
+VTileMapbox
 vtile_mapbox_new
 vtile_mapbox_load
 vtile_mapbox_load_from_file
