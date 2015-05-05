@@ -1,0 +1,3 @@
+way [highway] {
+    width: 3;
+}

@@ -253,6 +253,7 @@ test_errors_where (void)
 
   assert_error_where ("error-selector-1.mapcss", 1, 0);
   assert_error_where ("error-selector-2.mapcss", 3, 3);
+  assert_error_where ("error-selector-3.mapcss", 1, 3);
   assert_error_where ("error-declaration-1.mapcss", 3, 10);
   assert_error_where ("error-declaration-2.mapcss", 4, 0);
   assert_error_where ("error-declaration-3.mapcss", 7, 4);

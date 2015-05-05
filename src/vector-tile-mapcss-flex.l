@@ -154,7 +154,8 @@ zoomlevel      "z"([0-9]|[0-9]{2})
 }
 
  /* Language constructs */
-[ \t]"[" { return yytext[0] };
+[ \t]"[" { return yytext[0]; };
+[ \t]"|" { return yytext[0]; };
 
 "{" { return LBRACE;    }
 "}" { return RBRACE;    }
