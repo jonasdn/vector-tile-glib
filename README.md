@@ -12,11 +12,11 @@ In order to build and use vector-tile-glib you need the following installed:
  *  pangocairo
  * protoc-c
  * Lemon
- * Flex 
+ * Flex
 
 ### Building
 Build the library like this:
-    
+
     $ ./autogen.sh --enable-gtk-doc
     $ ./configure
     $ make
@@ -66,3 +66,115 @@ This tool will download a mapbox file from the Mapzen tile service. You specify 
       --longitude      Longitude to get tile y for
       -z, --zoom       zoom level
       -s, --search     Location to get tile for
+
+
+## MapCSS
+
+Currently the following MapCSS constructs and properties are supported,
+let me know what you are missing the most!
+
+
+### Selector types
+
+    node
+    way
+    line
+    canvas
+    area
+
+### Tests
+
+    [tag=value]
+    [tag!=value]
+    [tag]
+    [!tag]
+
+### Zoom filters
+
+    area|zn
+    area|zn-n+x
+
+
+### Properties
+
+    fill-color
+    fill-opacity
+    z-index
+    width
+    color
+    opacity
+    dashes
+    linecap
+    linejoin
+    casing-width
+    casing-color
+    casing-opacity
+    casing-dashes
+    casing-linejoin
+    casing-linecap
+    text
+    font-family
+    font-size
+    font-weight
+    font-style
+    font-variant
+    text-decoration
+    text-transform
+    text-color
+    text-opacity
+    text-halo-color
+    text-halo-radius
+
+### Example
+
+    canvas {
+        fill-color: #FAEBD7;
+    }
+
+    node|z5-10[place=country] {
+        text-color: #4A90D9;
+        text: name;
+        text-halo-radius: 2;
+        text-halo-color:white;
+    }
+
+    node|z5-13[place=city] {
+        font-family: cantarell;
+        font-weight: bold;
+        text-color: #000000;
+        font-size: 14;
+        text: name;
+        text-halo-radius: 2;
+        text-halo-color: white;
+    }
+
+    way|z8-17[highway] {
+        color: #d2ccc3;
+        casing-color: #c7b8a4;
+        casing-width: 1;
+    }
+
+    way|z8-17[highway=motorway],
+    way|z8-17[highway=motorway_link] {
+        color: #ffaf60;
+        casing-color: #f57900;
+        z-index: 7;
+    }
+
+    area|z16-19[building] {
+        text: name;
+        text-color: #222233;
+        text-halo-color: white;
+        text-halo-radius: 1;
+        font-size: 8;
+        font-family: cantarell;
+    }
+
+    area|z16-19[landuse] {
+        text: name;
+        text-color: #222233;
+        text-halo-color: white;
+        text-halo-radius: 1;
+        font-size: 8;
+        font-family: cantarell;
+    }
