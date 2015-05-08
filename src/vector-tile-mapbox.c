@@ -893,8 +893,13 @@ mapbox_find_text_pos (MapboxFeatureData *data,
         }
 
         d = sqrt (pow (r_x - l_x, 2) + pow (r_y - l_y, 2));
-        if (d > longest)
+        if (d > longest) {
           longest = d;
+          *x_out = l_x;
+          *y_out = l_y;
+          *angle = atan2 (r_y - l_y, r_x - l_x);
+          *length = longest;
+        }
       }
       break;
     }
@@ -909,10 +914,8 @@ mapbox_find_text_pos (MapboxFeatureData *data,
   } else if (data->feature->type == VECTOR_TILE__TILE__GEOM_TYPE__LINESTRING) {
     guint line_width = vtile_mapcss_style_get_num (data->style, "width");
 
-    *x_out = l_x;
-    *y_out = l_y - line_width;
-    *angle = atan2 (r_y - l_y, r_x - l_x);
-    *length = longest;
+    *y_out = *y_out - line_width;
+    *x_out = *x_out - line_width / 2;
   } else {
     *x_out = x;
     *y_out = y;
@@ -995,7 +998,7 @@ mapbox_add_text (MapboxFeatureData *data,
   gint32 x;
   gint32 y;
   gdouble angle = 0.0;
-  guint length;
+  guint length = 0;
   gint min_x;
   gint max_x;
   gint min_y;
@@ -1010,7 +1013,7 @@ mapbox_add_text (MapboxFeatureData *data,
   pango_attr_list_unref (attr_list);
   pango_layout_get_pixel_size (layout, &width, &height);
 
-  if (width > length) {
+  if (length && width > length) {
     g_object_unref (layout);
     return;
   }
