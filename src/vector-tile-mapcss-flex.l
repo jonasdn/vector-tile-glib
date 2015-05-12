@@ -98,6 +98,8 @@ zoomlevel      "z"([0-9]|[0-9]{2})
   gint c, i;
   FILE *import_file;
   VTileMapCSS *mapcss;
+  char *path;
+  char *search_path;
 
   mapcss = yyget_extra (yyscanner);
 
@@ -113,7 +115,12 @@ zoomlevel      "z"([0-9]|[0-9]{2})
     }
   }
 
-  import_file = fopen (yytext, "r");
+  search_path = vtile_mapcss_get_search_path (mapcss);
+  if (!search_path)
+    search_path = ".";
+  path = g_build_filename (search_path, yytext, NULL);
+  import_file = fopen (path, "r");
+  g_free (path);
   if (import_file) {
     YY_BUFFER_STATE buffer_state;
 

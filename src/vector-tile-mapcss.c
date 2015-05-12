@@ -42,6 +42,7 @@ struct _VTileMapCSSPrivate {
   guint column;
   char *text;
   char *parse_error;
+  char *search_path;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (VTileMapCSS, vtile_mapcss, G_TYPE_OBJECT)
@@ -65,6 +66,9 @@ vtile_mapcss_finalize (GObject *vmapcss)
 
   for (i = 0; i < VTILE_MAPCSS_SELECTOR_TYPE_LAST; i++)
     g_list_free_full (mapcss->priv->selectors[i], g_object_unref);
+
+  if (mapcss->priv->search_path)
+    g_free (mapcss->priv->search_path);
 
   G_OBJECT_CLASS (vtile_mapcss_parent_class)->finalize (vmapcss);
 }
@@ -143,6 +147,7 @@ vtile_mapcss_init (VTileMapCSS *mapcss)
   mapcss->priv->column = 0;
   mapcss->priv->text = NULL;
   mapcss->priv->parse_error = NULL;
+  mapcss->priv->search_path = NULL;
 
   for (i = 0; i < VTILE_MAPCSS_SELECTOR_TYPE_LAST; i++)
     mapcss->priv->selectors[i] = NULL;
@@ -207,6 +212,38 @@ vtile_mapcss_parse (VTileMapCSS *mapcss, guint8 *data, gssize size,
   return ret;
 }
 
+/**
+ * vtile_mapcss_set_search_path:
+ * @mapcss: a #VTileMapCSS object.
+ * @path: (transfer none): the new search path
+ *
+ * Determines where mapcss will look for resources referenced from
+ * the style file.
+ *
+ */
+void
+vtile_mapcss_set_search_path (VTileMapCSS *mapcss, const char *path)
+{
+  if (mapcss->priv->search_path)
+    g_free (mapcss->priv->search_path);
+
+  mapcss->priv->search_path = g_strdup (path);
+}
+
+/**
+ * vtile_mapcss_get_search_path:
+ * @mapcss: a #VTileMapCSS object.
+ *
+ * Determines where mapcss will look for resources referenced from
+ * the style file.
+ *
+ * Returns: (transfer none): the current search path.
+ */
+char *
+vtile_mapcss_get_search_path (VTileMapCSS *mapcss)
+{
+  return mapcss->priv->search_path;
+}
 
 /**
  * vtile_mapcss_load:

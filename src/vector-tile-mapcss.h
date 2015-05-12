@@ -50,6 +50,8 @@ struct _VTileMapCSSClass {
 };
 
 VTileMapCSS *vtile_mapcss_new (void);
+void vtile_mapcss_set_search_path (VTileMapCSS *mapcss, const char *path);
+char * vtile_mapcss_get_search_path (VTileMapCSS *mapcss);
 gboolean vtile_mapcss_load (VTileMapCSS *mapcss,
                             const char *filename,
                             GError **error);
