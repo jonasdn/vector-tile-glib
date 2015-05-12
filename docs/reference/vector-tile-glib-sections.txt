@@ -11,6 +11,7 @@ vtile_mapbox_render
 vtile_mapbox_render_async
 vtile_mapbox_render_finish
 vtile_mapbox_get_texts
+vtile_mapbox_text_free
 <SUBSECTION Standard>
 VTILE_IS_MAPBOX
 VTILE_IS_MAPBOX_CLASS
@@ -31,6 +32,7 @@ VTileMapCSSSelectorType
 VTileMapCSS
 vtile_mapcss_new
 vtile_mapcss_load
+vtile_mapcss_set_search_path
 vtile_mapcss_get_style
 <SUBSECTION Standard>
 VTILE_IS_MAPCSS

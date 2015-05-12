@@ -24,6 +24,7 @@
 #include "vector-tile-mapcss-private.h"
 #include "vector-tile-mapcss-style.h"
 #include "vector-tile-mapbox.h"
+#include "vector-tile-boxed.h"
 #include "vector_tile.pb-c.h"
 
 /**
@@ -171,6 +172,20 @@ enum {
 
 G_DEFINE_TYPE_WITH_PRIVATE (VTileMapbox, vtile_mapbox, G_TYPE_OBJECT)
 
+/**
+ * vtile_mapbox_text_free:
+ * @text: a #VTileMapboxText object
+ *
+ * Free a #VTileMapboxText object.
+ */
+void
+vtile_mapbox_text_free (VTileMapboxText *text)
+{
+  cairo_surface_destroy (text->surface);
+  g_free (text->uid);
+  g_free (text);
+}
+
 GQuark
 vtile_mapbox_error_quark (void)
 {
@@ -232,19 +247,11 @@ vtile_mapbox_get_property (GObject    *object,
 }
 
 static void
-free_mapbox_text (VTileMapboxText *text) {
-  cairo_surface_destroy (text->surface);
-  g_free (text->uid);
-  g_free (text);
-}
-
-static void
 vtile_mapbox_finalize (GObject *object)
 {
   VTileMapbox *mapbox = (VTileMapbox *) object;
   gint i;
 
-  g_list_free_full (mapbox->priv->texts, (GDestroyNotify) free_mapbox_text);
   for (i = 0; i < NUM_RENDER_LAYERS; i++)
     g_free (mapbox->priv->render_layers[i]);
   
@@ -1459,7 +1466,7 @@ vtile_mapbox_dump_info (VTileMapbox *mapbox,
  * Returns all labels found while rendering the tile,
  * or %NULL if none was found.
  *
- * Returns: (element-type VTileMapboxText) (transfer none): List of #VTileMapboxText
+ * Returns: (element-type VTileMapboxText) List of #VTileMapboxText
  */
 GList *
 vtile_mapbox_get_texts (VTileMapbox *mapbox)

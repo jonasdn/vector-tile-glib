@@ -103,6 +103,8 @@ GList *vtile_mapbox_get_texts (VTileMapbox *mapbox);
 
 GQuark vtile_mapbox_error_quark (void);
 
+void vtile_mapbox_text_free (VTileMapboxText *text);
+
 G_END_DECLS
 
 #endif /* VECTOR_TILE_MAPBOX */
