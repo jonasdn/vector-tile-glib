@@ -820,6 +820,7 @@ mapbox_get_text_attributes (MapboxFeatureData *data)
   pango_font_description_set_size (desc, (gint) size * PANGO_SCALE);
 
   pango_attr_list_insert (attr_list, pango_attr_font_desc_new (desc));
+  pango_font_description_free (desc);
 
   enum_value = vtile_mapcss_style_get_enum (data->style, "text-decoration");
   if (enum_value == VTILE_MAPCSS_VALUE_UNDERLINE)
@@ -1015,6 +1016,7 @@ mapbox_add_text (MapboxFeatureData *data,
 
   if (length && width > length) {
     g_object_unref (layout);
+    g_free (m_text);
     return;
   }
 
@@ -1093,6 +1095,8 @@ mapbox_add_text (MapboxFeatureData *data,
   cairo_set_source_surface (text_cr, rotated, -min_x, -min_y);
   cairo_paint(text_cr);
   cairo_surface_destroy (rotated);
+  cairo_destroy (rotated_cr);
+  cairo_destroy (text_cr);
 
   data->mapbox->priv->texts = g_list_prepend (data->mapbox->priv->texts,
                                               m_text);
