@@ -59,12 +59,8 @@ VTileMapCSSStyle *vtile_mapcss_get_style (VTileMapCSS *mapcss,
                                           guint zoom_level);
 gboolean vile_mapcss_add_selector (VTileMapCSS *mapcss,
                                    VTileMapCSSSelector *selector);
-void
-vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
-                               char *valid_tokens);
-void
-vtile_mapcss_set_type_error (VTileMapCSS *mapcss);
-
+void vtile_mapcss_set_parse_error (VTileMapCSS *mapcss, char *valid_tokens);
+void vtile_mapcss_set_error (VTileMapCSS *mapcss, char *msg, guint lineno, guint column);
 
 G_END_DECLS
 

@@ -76,7 +76,7 @@
     }
   }
 
-  vtile_mapcss_set_syntax_error (parser, g_string_free (string, FALSE));
+  vtile_mapcss_set_parse_error (parser, g_string_free (string, FALSE));
 }
 
 stylesheet ::= rule_list .

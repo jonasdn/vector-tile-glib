@@ -173,7 +173,7 @@ vtile_mapcss_parse (VTileMapCSS *mapcss, guint8 *data, gssize size,
   gint lex_code;
   gboolean ret = TRUE;
 
-  yylex_init(&scanner);
+  yylex_init_extra (mapcss, &scanner);
 
   buffer_state = yy_scan_buffer (data, size, scanner);
   lemon_mapcss = ParseAlloc (malloc);
@@ -185,6 +185,9 @@ vtile_mapcss_parse (VTileMapCSS *mapcss, guint8 *data, gssize size,
     mapcss->priv->text = yyget_text (scanner);
     mapcss->priv->lineno = yyget_lineno (scanner);
     mapcss->priv->column = yyget_column (scanner);
+
+    if (mapcss->priv->parse_error)
+      break;
 
     Parse (lemon_mapcss, lex_code, yylval, mapcss);
   } while (lex_code > 0 && !mapcss->priv->parse_error);
@@ -291,33 +294,39 @@ vtile_mapcss_load (VTileMapCSS *mapcss,
 }
 
 /**
- * vtile_mapcss_set_syntax_error: (skip)
+ * vtile_mapcss_set_error: (skip)
  */
 void
-vtile_mapcss_set_syntax_error (VTileMapCSS *mapcss,
-                               char *valid_tokens)
+vtile_mapcss_set_error (VTileMapCSS *mapcss,
+                        char *error,
+                        guint lineno,
+                        guint column)
+
 {
   char *msg;
 
-  msg = g_strdup_printf ("Unexpected token '%s' at %u:%u, expected: %s\n",
+  msg = g_strdup_printf ("%s at %u:%u",
+                         error, lineno, column);
+  mapcss->priv->parse_error = msg;
+
+  g_free (error);
+}
+
+/**
+ * vtile_mapcss_set_parse_error: (skip)
+ */
+void
+vtile_mapcss_set_parse_error (VTileMapCSS *mapcss,
+                              char *valid_tokens)
+{
+  char *msg;
+
+  msg = g_strdup_printf ("Unexpected token '%s' at %u:%u, expected: %s",
                          mapcss->priv->text, mapcss->priv->lineno,
                          mapcss->priv->column, valid_tokens);
   mapcss->priv->parse_error = msg;
 
   g_free (valid_tokens);
-}
-
-/**
- * vtile_mapcss_set_type_error: (skip)
- */
-void
-vtile_mapcss_set_type_error (VTileMapCSS *mapcss)
-{
-  char *msg;
-
-  msg = g_strdup_printf ("Unexpected type at %u:%u\n",
-                         mapcss->priv->lineno, mapcss->priv->column);
-  mapcss->priv->parse_error = msg;
 }
 
 /**

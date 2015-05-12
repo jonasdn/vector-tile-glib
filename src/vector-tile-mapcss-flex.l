@@ -19,10 +19,16 @@
   #include <glib.h>
 
   #include "vector-tile-mapcss-lemon.h"
-  #include "vector-tile-mapcss-private.h"
+  #include "vector-tile-mapcss.h"
 
   gint lineno;
   gint column;
+
+  #define YY_EXTRA_TYPE VTileMapCSS *
+
+#define MAX_IMPORT_DEPTH 10
+  YY_BUFFER_STATE import_stack[MAX_IMPORT_DEPTH];
+  gint import_stack_index = 0;
 
   #define YY_USER_ACTION                                                \
     do {                                                                \
@@ -67,6 +73,7 @@
 %}
 
 %x COMMENT
+%x IMPORT
 
 %option noyywrap
 %option reentrant
@@ -84,6 +91,54 @@ zoomlevel      "z"([0-9]|[0-9]{2})
 <COMMENT>"*"+[^*/\n]* { /* eat up '*'s not followed by '/'s */ }
 <COMMENT>\n           { lineno++;                              }
 <COMMENT>"*"+"/"      { BEGIN(INITIAL);                        }
+
+"@import(\""             { BEGIN (IMPORT); }
+<IMPORT>[a-zA-Z0-9\.-_]+ {
+  char tokens[] = { '\"', ')', ';' };
+  gint c, i;
+  FILE *import_file;
+  VTileMapCSS *mapcss;
+
+  mapcss = yyget_extra (yyscanner);
+
+  yyset_column (column, yyscanner);
+  for (i = 0; i < G_N_ELEMENTS (tokens); i++) {
+    c = input (yyscanner);
+    if (c != tokens[i]) {
+      char *error;
+
+      error = g_strdup ("Unexpected token");
+      vtile_mapcss_set_error (mapcss, error, lineno, column + i);
+      return;
+    }
+  }
+
+  import_file = fopen (yytext, "r");
+  if (import_file) {
+    YY_BUFFER_STATE buffer_state;
+
+    yyset_in (import_file, yyscanner);
+    import_stack[import_stack_index++] = YY_CURRENT_BUFFER;
+    buffer_state = yy_create_buffer (import_file, YY_BUF_SIZE, yyscanner);
+    yy_switch_to_buffer (buffer_state, yyscanner);
+
+    BEGIN (INITIAL);
+  } else {
+    char *error;
+
+    error = g_strdup_printf ("Failed to open file '%s'", yytext);
+    vtile_mapcss_set_error (mapcss, error, lineno, column);
+    return;
+  }
+}
+<<EOF>> {
+  if (--import_stack_index < 0) {
+    yyterminate();
+  } else {
+    yy_delete_buffer (YY_CURRENT_BUFFER, yyscanner);
+    yy_switch_to_buffer (import_stack[import_stack_index], yyscanner);
+  }
+ }
 
  /* Selector types */
 "area"   { return AREA;   }
