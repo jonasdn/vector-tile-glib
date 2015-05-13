@@ -238,6 +238,8 @@ vtile_mapcss_style_get_color (VTileMapCSSStyle *style,
 {
   VTileMapCSSValue *value;
 
+  g_return_val_if_fail (style != NULL, NULL);
+
   value = g_hash_table_lookup (style->properties, name);
   if (value)
     return &value->color;
@@ -257,6 +259,8 @@ vtile_mapcss_style_get_dash (VTileMapCSSStyle *style,
                              const char *name)
 {
   VTileMapCSSValue *value;
+
+  g_return_val_if_fail (style != NULL, NULL);
 
   value = g_hash_table_lookup (style->properties, name);
   if (value)
@@ -297,6 +301,8 @@ vtile_mapcss_style_get_str (VTileMapCSSStyle *style,
 {
   VTileMapCSSValue *value;
 
+  g_return_val_if_fail (style != NULL, NULL);
+
   value = g_hash_table_lookup (style->properties, name);
   if (value)
       return value->str;
@@ -334,6 +340,8 @@ vtile_mapcss_style_new ()
 void
 vtile_mapcss_style_free (VTileMapCSSStyle *style)
 {
+  g_return_if_fail (style != NULL);
+
   g_hash_table_unref (style->properties);
   g_free (style);
 }

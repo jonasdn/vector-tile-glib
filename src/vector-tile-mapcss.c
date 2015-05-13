@@ -224,6 +224,8 @@ vtile_mapcss_parse (VTileMapCSS *mapcss, guint8 *data, gssize size,
 void
 vtile_mapcss_set_search_path (VTileMapCSS *mapcss, const char *path)
 {
+  g_return_if_fail (mapcss != NULL);
+
   if (mapcss->priv->search_path)
     g_free (mapcss->priv->search_path);
 
@@ -242,6 +244,8 @@ vtile_mapcss_set_search_path (VTileMapCSS *mapcss, const char *path)
 char *
 vtile_mapcss_get_search_path (VTileMapCSS *mapcss)
 {
+  g_return_val_if_fail (mapcss != NULL, NULL);
+
   return mapcss->priv->search_path;
 }
 
@@ -270,13 +274,16 @@ vtile_mapcss_load (VTileMapCSS *mapcss,
   guint8 *buffer;
   gint i;
 
+  g_return_val_if_fail (mapcss != NULL, FALSE);
+  g_return_val_if_fail (filename != NULL, FALSE);
+
   for (i = 0; i < VTILE_MAPCSS_SELECTOR_TYPE_LAST; i++) {
     if (mapcss->priv->selectors[i]) {
       g_list_free_full (mapcss->priv->selectors[i], g_object_unref);
       mapcss->priv->selectors[i] = NULL;
     }
   }
-  
+
   file = g_file_new_for_path (filename);
   info = g_file_query_info (file,
                             G_FILE_ATTRIBUTE_STANDARD_SIZE,
@@ -342,6 +349,8 @@ vtile_mapcss_set_error (VTileMapCSS *mapcss,
 {
   char *msg;
 
+  g_return_if_fail (mapcss != NULL);
+
   msg = g_strdup_printf ("%s at %u:%u",
                          error, lineno, column);
   mapcss->priv->parse_error = msg;
@@ -357,6 +366,8 @@ vtile_mapcss_set_parse_error (VTileMapCSS *mapcss,
                               char *valid_tokens)
 {
   char *msg;
+
+  g_return_if_fail (mapcss != NULL);
 
   msg = g_strdup_printf ("Unexpected token '%s' at %u:%u, expected: %s",
                          mapcss->priv->text, mapcss->priv->lineno,
@@ -375,6 +386,8 @@ vtile_mapcss_add_selector (VTileMapCSS *mapcss,
                            VTileMapCSSSelector *selector)
 {
   VTileMapCSSSelectorType type;
+
+  g_return_if_fail (mapcss != NULL);
 
   type = vtile_mapcss_selector_get_selector_type (selector);
   mapcss->priv->selectors[type] = g_list_prepend (mapcss->priv->selectors[type],
@@ -491,6 +504,8 @@ vtile_mapcss_get_style (VTileMapCSS *mapcss,
 {
   VTileMapCSSStyle *style;
   GList *selector_list, *l = NULL;
+
+  g_return_val_if_fail (mapcss != NULL, NULL);
 
   style = vtile_mapcss_style_new ();
   selector_list = mapcss->priv->selectors[type];

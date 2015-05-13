@@ -352,6 +352,7 @@ vtile_mapbox_load (VTileMapbox *mapbox,
                    GError **error)
 {
   g_return_val_if_fail (mapbox != NULL, FALSE);
+  g_return_val_if_fail (data != NULL, FALSE);
   
   mapbox->priv->tile = vector_tile__tile__unpack (NULL,
                                                   size,
@@ -450,6 +451,8 @@ void
 vtile_mapbox_set_stylesheet (VTileMapbox *mapbox,
                              VTileMapCSS *stylesheet)
 {
+  g_return_if_fail (mapbox != NULL);
+
   mapbox->priv->stylesheet = stylesheet;
 }
 
@@ -1373,6 +1376,9 @@ vtile_mapbox_render_async (VTileMapbox *mapbox,
 {
   GTask *task;
 
+  g_return_if_fail (mapbox != NULL);
+  g_return_if_fail (cr != NULL);
+
   task = g_task_new (mapbox, NULL, callback, user_data);
   g_task_set_task_data (task, cr, NULL);
   g_task_run_in_thread (task, (GTaskThreadFunc) vtile_mapbox_render_thread);
@@ -1392,6 +1398,7 @@ vtile_mapbox_render_finish (VTileMapbox *mapbox,
                             GAsyncResult *result,
                             GError **error)
 {
+  g_return_val_if_fail (mapbox != NULL, FALSE);
   g_return_val_if_fail (g_task_is_valid (result, mapbox), FALSE);
 
   return g_task_propagate_boolean (G_TASK (result), error);
@@ -1471,5 +1478,7 @@ vtile_mapbox_dump_info (VTileMapbox *mapbox,
 GList *
 vtile_mapbox_get_texts (VTileMapbox *mapbox)
 {
+  g_return_val_if_fail (mapbox != NULL, NULL);
+
   return mapbox->priv->texts;
 }
